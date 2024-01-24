@@ -1,7 +1,7 @@
 ---
 title: "Biostat 212a Homework 1"
 subtitle: "Due Jan 23, 2024 @ 11:59PM"
-author: "YOUR NAME and UID"
+author: "Yilin He, UID:905789961"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 format:
   html:
@@ -24,85 +24,614 @@ knitr:
 
 ## Filling gaps in lecture notes (10pts)
 
-Consider the regression model
-$$
-Y = f(X) + \epsilon,
-$$
-where $\operatorname{E}(\epsilon) = 0$. 
-
 ### Optimal regression function
 
-Show that the choice
+Expanding the square and splitting the expectation of the mean squared prediction error, we get:
 $$
-f_{\text{opt}}(X) = \operatorname{E}(Y | X)
+\begin{align}
+\operatorname{E}\{[Y - f(X)]^2\} \\
+&= \operatorname{E}\{[Y - \operatorname{E}(Y|X) + \operatorname{E}(Y|X) - f(X)]^2\} \\
+&= \operatorname{E}\{[Y - \operatorname{E}(Y|X)]^2\} + \operatorname{E}\{[\operatorname{E}(Y|X) - f(X)]^2\} + 2\operatorname{E}\{[Y - \operatorname{E}(Y|X)][\operatorname{E}(Y|X) - f(X)]\} \\
+\end{align}
 $$
-minimizes the mean squared prediction error
+Using the law of iterated expectation, we simplify and get zero for the last term:
 $$
-\operatorname{E}\{[Y - f(X)]^2\},
+2\operatorname{E}\{\operatorname{E}[[Y - \operatorname{E}(Y|X)][\operatorname{E}(Y|X) - f(X)] | X]\} \\
+= 2\operatorname{E}\{\operatorname{E}[[Y - \operatorname{E}(Y|X)] | X][\operatorname{E}(Y|X) - f(X)]\} \\
+= 0
 $$
-where the expectations averages over variations in both $X$ and $Y$. (Hint: condition on $X$.)
-
-
-
+Therefore, we have:
+$$
+\begin{align}
+\operatorname{E}\{[Y - f(X)]^2\} \\
+&= \operatorname{E}\{[Y - \operatorname{E}(Y|X)]^2\} + \operatorname{E}\{[\operatorname{E}(Y|X) - f(X)]^2\} \\
+\end{align}
+$$
 
 ### Bias-variance trade-off
 
-Given an estimate $\hat f$ of $f$, show that the test error at a $x_0$ can be decomposed as
+The expected prediction error can be decomposed into the variance and bias components, and recognizing with $y_0 = f(x_0)+\epsilon$, we have:
 $$
-\operatorname{E}\{[y_0 - \hat f(x_0)]^2\} = \underbrace{\operatorname{Var}(\hat f(x_0)) + [\operatorname{Bias}(\hat f(x_0))]^2}_{\text{MSE of } \hat f(x_0) \text{ for estimating } f(x_0)} + \underbrace{\operatorname{Var}(\epsilon)}_{\text{irreducible}},
+\begin{align}
+\operatorname{E}\{[y_0 - \hat f(x_0)]^2\} \\
+&= \operatorname{Var}(\hat f(x_0)) + [\operatorname{Bias}(\hat f(x_0))]^2 + \operatorname{Var}(\epsilon) \\
+&= \operatorname{E}[(f(x_0)+\epsilon-\hat f(x_0))^2] \\
+&= \operatorname{E}[(f(x_0)-\hat f(x_0))^2] + \operatorname{E}[\epsilon^2] + 2\operatorname{E}[\epsilon(f(x_0)-\hat f(x_0))] \\
+\end{align}
 $$
-where the expectation averages over the variability in $y_0$ and $\hat f$.
+
+Since $\epsilon$ has mean zero. We have:
+$$
+\operatorname{E}[\epsilon(f(x_0)-\hat f(x_0))] \\
+= \operatorname{E}[f(x_0)-\hat f(x_0)]\operatorname{E}[\epsilon] \\
+= 0
+$$
+
+Therefore, we remain with:
+$$
+\begin{align}
+\operatorname{E}\{[y_0 - \hat f(x_0)]^2\} \\
+&= \operatorname{E}[(f(x_0)-\hat f(x_0))^2] + \operatorname{E}[\epsilon^2] \\
+&= \operatorname{E}[(f(x_0)-\hat f(x_0))^2] + 0 \\
+&= \operatorname{Var}(\hat f(x_0)) + [\operatorname{Bias}(\hat f(x_0))]^2 + \operatorname{Var}(\epsilon) \\
+\end{align}
+$$
 
 ## ISL Exercise 2.4.3 (10pts)
+We now revisit the bias-variance decomposition.
 
-```{r, eval = F}
-library(tidyverse)
-fit <- lm(sales ~ TV, data = )
+### 2.4.3 (a) 
+Provide a sketch of typical (squared) bias, variance, training er- ror, test error, and Bayes (or irreducible) error curves, on a sin- gle plot, as we go from less flexible statistical learning methods towards more flexible approaches. The x-axis should represent the amount of flexibility in the method, and the y-axis should represent the values for each curve. There should be five curves. Make sure to label each one.
+
+**Answer:**
+```{r}
+library(ggplot2)
+flexibility <- seq(-2, 2, length.out = 100)
+squared_bias <- 8*exp(-flexibility) + 1
+variance <- 12*exp(flexibility) + 1
+training_error <- squared_bias*.5
+irreducible_error <- 10
+bayes_error <- irreducible_error
+test_error <- squared_bias + variance + irreducible_error
+
+ggplot() +
+  geom_line(data = data.frame(flexibility, squared_bias), aes(x = flexibility, y = squared_bias, color = "Squared Bias")) +
+  geom_line(data = data.frame(flexibility, variance), aes(x = flexibility, y = variance, color = "Variance")) +
+  geom_line(data = data.frame(flexibility, training_error), aes(x = flexibility, y = training_error, color = "Training Error")) +
+  geom_line(data = data.frame(flexibility, test_error), aes(x = flexibility, y = test_error, color = "Test Error")) +
+  geom_line(data = data.frame(flexibility, bayes_error), aes(x = flexibility, y = bayes_error, color = "Bayes Error"), linetype = "dashed") +
+  scale_color_manual(values = c("Squared Bias" = "green", "Variance" = "blue", "Training Error" = "red", "Test Error" = "gold", "Bayes Error" = "black")) +
+  guides(color = guide_legend(title = "Statistical Learning Curves")) +
+  labs(title = "Bias-variance Decomposition by Flexibility", x = "Flexibility", y = "Values") +
+  theme_minimal()          
 ```
+### 2.4.3 (b) 
+Explain why each of the five curves has the shape displayed in part
+
+**Answer:**
+- *Bias* refers to the error that is introduced by approximating a real-life problem, which may be extremely complicated, by a much simpler model. Bias is the difference between the expected (or average) prediction of our model and the correct value which we are trying to predict. Models with high bias pay very little attention to the training data and oversimplify the model. As a model becomes more flexible, the bias decreases.
+
+- *Variance* refers to the amount by which our prediction would change if we estimated it using a different training data set. Variance refers to the amount by which the prediction would change if we estimated it using a different training data set. Models with high variance pay a lot of attention to training data and do not generalize on the data which it hasn’t seen before. As a model becomes more flexible, the variance increases.
+
+- *Training error* is the error that results from the training process of the data it was trained on. The training error is the error that results from the training process of the data it was trained on. It is defined as the expected value of the squared difference between the predicted output and the actual output on the training data set. The training error typically decreases with increased model flexibility, however at a certain point, it increases as the model becomes too flexible and overfits the data.
+
+- *Testing error* is the error that results from the testing process of the data it was trained on. The testing error is the error that results from the testing process of the data it was trained on. It is defined as the expected value of the squared difference between the predicted output and the actual output on the testing data set. The testing error typically decreases with increased model flexibility, however at a certain point, it increases as the model becomes too flexible and overfits the data.
+
+- *Bayes error* is the error that results from the irreducible error in the data. The Bayes error is the error that results from the irreducible error in the data. It is defined as the expected value of the squared difference between the predicted output and the actual output on the irreducible error in the data. The Bayes error is constant and does not change with increased model flexibility.
 
 ## ISL Exercise 2.4.4 (10pts)
+You will now think of some real-life applications for statistical learning.
 
+### 2.4.4 (a) 
+Describe three real-life applications in which classification might be useful. Describe the response, as well as the predictors. Is the goal of each application inference or prediction? Explain your answer. 
+
+**Answer:**
+1. Predicting whether a patient has a disease or not based on their symptoms. The response is whether the patient has the disease or not, and the predictors are the symptoms. The goal of this application is prediction as we are trying to predict whether the patient has the disease or not based on their symptoms.
+
+2. Predicting whether a student will pass or fail a class based on their grades. The response is whether the student will pass or fail the class, and the predictors are the grades. The goal of this application is prediction as we are trying to predict whether the student will pass or fail the class based on their grades.
+
+3. Predicting whether a person will default on their loan based on their credit score. The response is whether the person will default on their loan or not, and the predictors are the credit score. The goal of this application is prediction as we are trying to predict whether the person will default on their loan based on their credit score.
+
+### 2.4.4 (b) 
+Describe three real-life applications in which regression might be useful. Describe the response, as well as the predictors. Is the goal of each application inference or prediction? Explain your answer. 
+
+**Answer:**
+1. Predicting the price of a house based on its features. The response is the price of the house, and the predictors are the features of the house. The goal of this application is prediction as we are trying to predict the price of the house based on its features.
+
+2. Predicting the number of sales of a product based on its price. The response is the number of sales of the product, and the predictors are the price of the product. The goal of this application is prediction as we are trying to predict the number of sales of the product based on its price.
+
+3. Predicting the number of people who will vote for a candidate based on their age. The response is the number of people who will vote for a candidate, and the predictors are the age of the people. The goal of this application is prediction as we are trying to predict the number of people who will vote for a candidate based on their age.
+
+
+### 2.4.4 (c) 
+Describe three real-life applications in which cluster analysis might be useful.
+
+**Answer:**
+1. Grouping customers based on their shopping habits. The goal of this application is to group customers based on their shopping habits.
+
+2. Grouping students based on their grades. The goal of this application is to group students based on their grades.
+
+3. Grouping patients based on their symptoms. The goal of this application is to group patients based on their symptoms.
 
 
 ## ISL Exercise 2.4.10 (30pts)
+This exercise involves the Boston housing data set.
 
-Your can read in the `boston` data set directly from url <https://raw.githubusercontent.com/ucla-biostat-212a/2024winter/master/slides/data/Boston.csv>. A documentation of the `boston` data set is [here](https://www.rdocumentation.org/packages/ISLR2/versions/1.3-2/topics/Boston).
-
-::: {.panel-tabset}
-
-#### R
-
+### 2.4.10 (a)
+How many rows are in this data set? How many columns? What do the rows and columns represent?\\
 ```{r, evalue = F}
 library(tidyverse)
 
 Boston <- read_csv("https://raw.githubusercontent.com/ucla-biostat-212a/2024winter/master/slides/data/Boston.csv", col_select = -1) %>% 
   print(width = Inf)
-```
 
-#### Python
-
-```{python}
-import pandas as pd
-import io
-import requests
-
-url = "https://raw.githubusercontent.com/ucla-econ-425t/2023winter/master/slides/data/Boston.csv"
-s = requests.get(url).content
-Boston = pd.read_csv(io.StringIO(s.decode('utf-8')), index_col = 0)
+library(ISLR2)
 Boston
+?Boston
+```
+**Answer:**\\
+There are 506 rows and 13 columns in this data set. The rows represent the different suburbs in Boston and the columns represent the different features of the suburbs.
+
+### 2.4.10 (b)
+Make some pairwise scatterplots of the predictors (columns) in this data set. Describe your findings.\\
+**Answer:** \\
+
+```{r, fig.width=10, fig.height=10}
+library(GGally)
+library(dplyr)
+Boston %>% select(everything()) %>% ggpairs(lower = list(continuous = wrap("points", alpha = 0.3,    size=0.2)), diag=list(continuous='barDiag'), upper = list(continuous = wrap("cor", size = 2))) + 
+  theme(strip.background = element_blank(), strip.text = element_text(size = 8), axis.text = element_text(size = 8), axis.title = element_text(size = 9))
+```
+**Answer:**\\
+Industrial land has a strong positive correlation with nitrogen oxide concentrations (nox and indus), indicating that industrial activities are an important source of nitrogen oxide emissions. This insight could inform policymakers to implement stricter emission controls near industrial areas to mitigate environmental impacts.
+
+The positive relationship between industrial land and tax rates (industrial and tax) may reflect the contribution of industrial land to local tax revenues or the government's approach to imposing higher taxes on industrial properties to offset their environmental footprint.
+
+Tax and rad: This positive relationship may indicate that areas with better transportation facilities, such as radial highways, tend to have higher property tax rates, perhaps because these areas are more popular or Have higher development potential.
+
+There is a positive correlation between building age and nitrogen oxide concentration (building age and nitrogen oxide concentration), revealing the connection between old buildings and environmental quality, indicating the need for environmental improvements in areas with old buildings.
+
+Distance to employment centers and nitrogen oxide concentrations (dis and nox): The negative correlation suggests that areas further from employment centers have lower nitrogen oxide levels, possibly due to reduced traffic and industrial activity.
+
+Lower demographic status and median home value (lstat and medv): This strong negative relationship highlights the profound impact of socioeconomic factors on the housing market, suggesting that areas with concentrations of lower status populations tend to have lower Home value.
+
+Asterisks indicate statistical significance, emphasizing the confidence in the correlation. For example, if there are three asterisks next to a correlation coefficient (usually indicating a p-value <0.001), this means there is a high degree of confidence that the relationship between the two variables is not due to chance. This statistical significance suggests that we can more certainly rely on these findings to inform policy or further research.
+
+### 2.4.10 (c) 
+Are any of the predictors associated with per capita crime rate? If so, explain the relationship.
+**Answer:**
+There appears to be a positive relationship between industrial activity and crime rates. This may be due to factors such as lower income levels and reduced residential stability in areas with more industrial activity. Industrial areas often overlap with low-income neighborhoods, which may have higher crime rates.
+
+There is a positive correlation between nitrogen oxide concentrations and crime rates. This shows that areas with higher levels of pollution are often uninhabitable and tend to have higher crime rates. Contaminated areas may overlap with industrial areas or low-income neighborhoods, which are more prone to crime.
+
+There is a positive relationship between the proportion of the population with lower status and crime rates. Areas with lower income and education levels tend to have higher crime rates. This may be due to a range of socioeconomic factors, including limited access to resources and opportunities.
+
+There is a negative relationship between the median number of owner-occupied homes and crime rates. This suggests that high-value homes are often located in areas with lower crime rates. Wealthy neighborhoods generally have better security, community resources, and lower socioeconomic stress, which helps lower crime rates.
+
+Notably, although these associations exist, they appear to be relatively weak or low. This means other factors may also influence crime rates in these areas. These relationships provide a nuanced understanding of how different social, economic, and environmental factors interact to influence crime rates in different communities.
+
+### 2.4.10 (d) 
+Do any of the census tracts of Boston appear to have particularly high crime rates? Tax rates? Pupil-teacher ratios? Comment on the range of each predictor.
+**Answer:**
+```{r, evalue = F}
+Transpose_Boston <- Boston %>% pivot_longer(cols = c(crim, tax, ptratio), names_to = "variable", values_to = "value" )
+
+ggplot(Transpose_Boston, aes(x = variable, y = value)) + 
+  geom_boxplot() +
+  facet_wrap(~variable, scales = "free_y") + 
+  theme(axis.text.x = element_blank())
+```
+These charts give us a look at three different scenarios for Boston neighborhoods: crime rate, property tax rate, and number of students per teacher.
+
+Looking at the crime rate ("crim"), the chart tells us that while most neighborhoods have low crime rates, there are a few that have very high crime rates. These high-crime areas are uncommon, but they contribute to the overall increase in crime.
+
+When we turn to tax rates ("taxes"), the situation stabilizes a bit. There are differences in tax rates from low to high, but not as extreme as crime. Most communities fall into the lower tax brackets, the median is pretty reasonable, and there aren't many places with sky-high taxes.
+
+Regarding the number of students per teacher (the "ratio"), the picture is fairly consistent across communities. As the lower numbers on the chart indicate, students in only a few communities are likely to receive more personal attention from teachers.
+
+Essentially, Boston neighborhoods have the most variation in crime rates, with some areas experiencing particularly high crime rates. Tax rates also vary widely, but not as extreme as on crime. Student-to-teacher ratios are largely consistent, suggesting consistent school staffing levels across districts.
+
+
+### 2.4.10 (e) 
+How many of the census tracts in this data set bound the Charles river?
+
+```{r, evalue = F}
+table(Boston$chas)
+```
+**Answer:**
+There are 35 census tracts in this data set bound the Charles river. The categorical variable 'chas' is composed of binary values where 'O' represents tracts that do not border the Charles River and '1' represents tracts that do border the Charles River.
+
+### 2.4.10 (f) 
+What is the median pupil-teacher ratio among the towns in this data set?
+
+```{r, evalue = F}
+median(Boston$ptratio)
+```
+**Answer:** 
+The median pupil-teacher ratio among the towns in this data set is 19.05. 
+
+### 2.4.10 (g) 
+Which census tract of Boston has lowest median value of owner- occupied homes? What are the values of the other predictors for that census tract, and how do those values compare to the overall ranges for those predictors? Comment on your findings.
+```{r, evalue = F}
+Bostonobs <- data.frame("obs"=1:nrow(Boston), Boston)
+Bostonobs %>% filter(medv == min(medv))
+
+```
+**Answer:**
+The census tract of Boston with the lowest median value of owner-occupied homes is tract 399. The values of the other predictors for that census tract are as follows:
+
+```{r, evalue = F}
+summary(Bostonobs[,2:14])
 ```
 
 
-:::
+1. Crime rate ("crim"): The median crime rate is lower at 0.2565, but the mean is much higher at 3.6. This shows that while most neighborhoods have low crime rates, some have significantly higher crime rates, pushing up the average. The large standard deviation of 8.6 shows that crime rates vary widely across neighborhoods.
+
+2. Residential lot over 25,000 sq ft. ('zn'): A median of 0 indicates that many neighborhoods do not have lots larger than 25,000 square feet. Designated for residential use. This indicates a lack of larger residential land in these areas.
+
+3. Proportion of non-retail operations ("indus"): The median was 9.69 acres, with both parcels at 18.1 acres, indicating a significant proportion of the land is zoned for non-retail operations, which is greater than many other parcels high. This could mean potential investment opportunities.
+
+4. Charles River dummy variable ('chas'): A value of 0 for both areas indicates that neither area is adjacent to the Charles River, which may impact environmental and recreational value.
+
+5. Nitrogen oxide concentration (nox): High concentrations of nitrogen oxide above the third quartile indicate severe pollution in both areas.
+
+6. Average number of rooms ("rm"): The average number of rooms in both areas is in the lower quartile range, indicating smaller homes on average.
+
+7. Proportion of older units ("age"): The higher upper quartile values in both areas mean that many residential units were built before 1940, implying an older housing stock.
+
+8. Distance to employment centers (dis): Both areas have weighted distances in the lower quartile, which could mean residents have longer commutes and potentially higher unemployment rates.
+
+9. Road accessibility ("rad"): The maximum value for both areas indicates very close proximity to radial roads, which may affect traffic and accessibility.
+
+10. Property Tax Rate (“Tax”): Located in the third quartile, tax rates are high, indicating that residents may pay more in taxes than their homes are worth.
+
+11. Student-to-teacher ratio ("Ratio"): Both districts have ratios near the high end of the third quartile, which may indicate a better education system with fewer students per teacher.
+
+12. Lower Demographic Status ("lstat"): Higher values in the top tertile of both areas indicate a higher proportion of low-income residents.
+
+13. Median value of owner-occupied homes ("medv"): The median value of owner-occupied homes in both areas is in the lower quartile, indicating that homes in these areas are less expensive than in other areas.
+
+### 2.4.10 (h) 
+In this data set, how many of the census tracts average more than seven rooms per dwelling? More than eight rooms per dwelling? Comment on the census tracts that average more than eight rooms per dwelling.
+```{r, evalue = F}
+seven_rooms <- Bostonobs %>% filter(rm > 7)
+eight_rooms <- Bostonobs %>% filter(rm > 8)
+data.frame("seven_rooms_more" = nrow(seven_rooms), "eight_rooms_more" = nrow(eight_rooms))
+```
+
+```{r, evalue = F}
+summary(seven_rooms)
+```
+
+```{r, evalue = F}
+boxplot(eight_rooms[,1:13])
+```
+**Answer:**
+In the provided data set, there are 64 census tracts where homes average more than seven rooms, and 13 census tracts where homes average more than eight rooms. Areas with larger homes have lower crime rates and student-teacher ratios, meaning a safer and more supportive educational environment. These areas typically enjoy lower tax rates, are primarily residential, have less commercial development, are located further away from highways, and are often made up of older, possibly historic homes, indicating quieter and possibly more affluent neighborhoods.
 
 ## ISL Exercise 3.7.3 (12pts)
+Suppose we have a data set with five predictors, X1 = GPA, X2 = IQ, X3 = Level (1 for College and 0 for High School), X4 = Interac- tion between GPA and IQ, and X5 = Interaction between GPA and Level. The response is starting salary after graduation (in thousands of dollars). Suppose we use least squares to fit the model, and get βˆ0 = 50,βˆ1 = 20,βˆ2 = 0.07,βˆ3 = 35,βˆ4 = 0.01,βˆ5 = −10.
+### 3.7.3 (a) 
+Which answer is correct, and why?
+i. For a fixed value of IQ and GPA, high school graduates earn more, on average, than college graduates.
+ii. For a fixed value of IQ and GPA, college graduates earn more, on average, than high school graduates.
+iii. For a fixed value of IQ and GPA, high school graduates earn more, on average, than college graduates provided that the GPA is high enough.
+iv. For a fixed value of IQ and GPA, college graduates earn more, on average, than high school graduates provided that the GPA is high enough.
+
+**Answer:** 
+$X_1$ = GPA, 
+$X_2$ = IQ, 
+$X_3$ = Level (1 for College and 0 for High School), 
+$X_4$ = Interaction between GPA and IQ, 
+$X_5$ = Interaction between GPA and Level
+$$
+\begin{align}
+Salary 
+&= \beta_0 + \beta_1X_1 
++ \beta_2X_2 + \beta_3X_3 + \beta_4X_4 + \beta_5X_5 \\
+&= 50 + 20X_1 + 0.07X_2 + 35X_3 + 0.01X_4 - 10X_5\\
+\end{align}
+$$
+There is a fixed IQ and GPA, so $X_2$ and $X_3$ are constants.
+$$
+\begin{align}
+Salary(high) 
+&= 50 + 20X_1 + 0.07X_2 + 35(0) + 0.01(X_1X_2) - 10(X_1*0) \\
+&= 50 + 20X_1 + 0.07X_2 + 0.01(X_1X_2) \\
+Salary(college)
+&= 50 + 20X_1 + 0.07X_2 + 35(1) + 0.01(X_1X_2) - 10(X_1*1) \\
+&= 50 + 20X_1 + 0.07X_2 + 35 + 0.01(X_1X_2) - 10X_1 \\
+&= Salary(high) + 35 - 10X_1 \\
+\end{align}
+$$
+If $X_1$ is high enough, then $Salary(college) > Salary(high)$
+Now assume salary difference if greater than or equal to 0 or less than or equal to 0:
+$$
+\begin{align}
+Salary(college) - Salary(high) &\geq 0 \\
+Salary(high) + 35 - 10X_1 - Salary(high) &\geq 0 \\
+35 - 10X_1 &\geq 0 \\
+35 &\geq 10X_1 \\
+3.5 &\geq X_1 \\
+\end{align}
+$$
+**Answer:**
+iii.  For a fixed value of IQ and GPA, high school graduates earn more, on average, than college graduates provided that the GPA is high enough.
+
+
+### 3.7.3 (b) 
+Predict the salary of a college graduate with IQ of 110 and a GPA of 4.0.
+**Answer:**
+$$
+\begin{align}
+Salary(college) &= 50 + 20X_1 + 0.07X_2 + 35 + 0.01(X_1X_2) - 10X_1 \\
+&= 50 + 20(4) + 0.07(110) + 35 + 0.01(4*110) - 10(4) \\
+&= 137.1 \\
+\end{align}
+$$
+
+### 3.7.3 (c) 
+True or false: Since the coefficient for the GPA/IQ interaction term is very small, there is very little evidence of an interaction effect. Justify your answer.
+
+**Answer:**
+False. The coefficient size is not a good indicator of the importance of a predictor in a model, it does not imply statistical significance.
+
 
 ## ISL Exercise 3.7.15 (20pts)
+This problem involves the Boston data set, which we saw in the lab for this chapter. We will now try to predict per capita crime rate using the other variables in this data set. In other words, per capita crime rate is the response, and the other variables are the predictors.
+
+### 3.7.15 (a) 
+For each predictor, fit a simple linear regression model to predict the response. Describe your results. In which of the models is there a statistically significant association between the predictor and the response? Create some plots to back up your assertions.
+
+```{r, evalue = F}
+output <- data.frame()
+for (predictor in colnames(Boston)[2:13]) {
+  all_sum <- summary(lm(formula=paste("crim ~ ",predictor), data = Boston))
+  coeffocoent_table <- all_sum$coefficients
+  #need to organize the info
+  intercept_coeff <- coeffocoent_table[1,]
+  predictor_coeff <- coeffocoent_table[2,]
+  rsquared <- all_sum$r.squared
+  adj_rsquared <- all_sum$adj.r.squared
+  
+  newBoston <- data.frame(
+    "predictor" = predictor,
+    intercept = round(intercept_coeff["Estimate"], 3),
+    beta = round(predictor_coeff["Estimate"], 3),
+    std_error = round(predictor_coeff["Std. Error"], 3),
+    t_value = round(predictor_coeff["t value"], 3),
+    p_value = round(predictor_coeff["Pr(>|t|)"], 3),
+    rsquared = round(rsquared, 3),
+    adj_rsquared = round(adj_rsquared, 3)
+    )
+  output <- rbind(output, newBoston)
+}
+print(output)
+
+```
+**Answer:**
+In an analysis of the Boston data set, which used a variety of other factors to predict crime rates, it was found that nearly all factors, except proximity to the Charles River, were significantly associated with crime rates. Factors such as industrial business volume, air pollution levels, highway access, property tax rates, proportion of African Americans, and socioeconomic status were more strongly related to crime rates, with highway access and tax rates having the largest effects. Overall, however, each factor alone is not a good predictor of crime rates, as shown by the low r-squared values.
+
+### 3.7.15 (b) 
+Fit a multiple regression model to predict the response using all of the predictors. Describe your results. For which predictors can we reject the null hypothesis H0 : βj = 0?
+```{r, evalue = F}
+long_Boston <- Boston %>%
+  pivot_longer(
+    cols = c('rad', 'tax', 'nox', 'chas'), 
+    names_to = "predictor", 
+    values_to = "value")
+
+ggplot(long_Boston, aes(x = value, y = crim)) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(~predictor, scales = "free") +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+```
+
+**Answer:**
+Using multiple regression models of Boston data, we find that land zoning, distance to employment centers, highway access, and median home value significantly predict crime rates. The model estimated an average crime rate of 13.78, but also showed that factors such as the presence of industry, proximity to rivers, air quality, older homes, proximity to work, taxes, school quality and home value tended to lower crime rates. The model accounts for approximately 45% of the variation in crime rates, but is not perfect because the error term is not normally distributed.
+
+
+### 3.7.15 (c) 
+How do your results from (a) compare to your results from (b)? Create a plot displaying the univariate regression coefficients from (a) on the x-axis, and the multiple regression coefficients from (b) on the y-axis. That is, each predictor is displayed as a single point in the plot. Its coefficient in a simple linear regres- sion model is shown on the x-axis, and its coefficient estimate in the multiple linear regression model is shown on the y-axis.
+
+```{r, evalue = F}
+data.frame(
+  "predictor" = colnames(Boston)[2:13],
+  "simple_regression" = output$beta,
+  "multiple_regression" = summary(lm(crim ~ ., data = Boston))$coefficients[-1,1]
+) 
+```
+```{r, evalue = F}
+ggplot(data.frame(
+  "predictor" = colnames(Boston)[2:13],
+  "simple_regression" = output$beta,
+  "multiple_regression" = summary(lm(crim ~ ., data = Boston))$coefficients[-1,1]
+), aes(x = simple_regression, y = multiple_regression)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "red") +
+  theme_bw()
+```
+
+**Answer:**
+When comparing the simple linear regression model (a) and the multiple regression model (b), clear differences emerge in the estimated impact of each predictor on crime rates. It is worth noting that the "nitrogen oxides" variable measuring air pollution levels has a large positive coefficient in the simple regression, but becomes negative in the multiple regression. This shows that when NOx is considered alone, it appears to be associated with higher crime rates, but when other factors are also considered, its relationship with crime is reversed.
+
+
+```{r, evalue = F}
+library(corrplot)
+hearplot <- round(cor(Boston[-c(1,4)]), 2)
+corrplot(hearplot, method = "number", type = "upper", tl.srt = 45)
+
+```
+**Answer:**
+A graph comparing the two sets of coefficients shows that while some predictors, such as "nitrogen oxides," change dramatically when moving from a univariate to a multivariate environment, other predictors change little, indicating that regardless of which model is used, The impact is consistent. This means that, when considered together, some predictors may have intercorrelations that influence their individual effects on responses. The plot visually represents each predictor as a point with its simple regression effect on the x-axis and its multiple regression effect on the y-axis, illustrating the differences in these effects.
+
+
+### 3.7.15 (d) 
+Is there evidence of non-linear association between any of the predictors and the response? To answer this question, for each predictor X, fit a model of the form
+$$
+Y = β_0 + β_1X + β_2X_2 + β_3X_3 + ε.
+$$
+1. zn
+```{r, evalue = F}
+summary(lm(crim ~ poly(zn, 3), data = Boston))
+```
+
+**Answer:**
+For the predictor 'zn' the cubic coefficient is not statistically significant, however the quadratic is, which could imply that there is a non-linear relationship between the predictor and the response at the quadratic level.
+
+2. indus
+```{r, evalue = F}
+summary(lm(crim ~ poly(indus, 3), data = Boston))
+```
+
+**Answer:**
+All of the polynomial valugs for 'indus' are statistically significant and so this would imply that there is a non-linear relationship between the predictor and the response. 
+
+3. nox
+```{r, evalue = F}
+summary(lm(crim ~ poly(nox, 3), data = Boston))
+```
+
+**Answer:**
+For the predictor 'nox' the cubic coefficient is not statistically significant, however the quadratic is, which could imply that there is a non-linear relationship between the predictor and the response at the quadratic level.
+
+4. rm
+```{r, evalue = F}
+summary(lm(crim ~ poly(rm, 3), data = Boston))
+```
+
+**Answer:**
+For the predictor 'rm' the cubic coefficient is not statistically significant, however the quadratic is, which could imply that there is a non-linear relationship between the predictor and the response at the quadratic level.
+
+
+5. age
+```{r, evalue = F}
+summary(lm(crim ~ poly(age, 3), data = Boston))
+```
+
+**Answer:**
+All of the polynomial values for 'age' are statistically significant and so this would imply that there is a non-linear relationship between the predictor and the response at all levels.
+
+6. dis
+```{r, evalue = F}
+summary(lm(crim ~ poly(dis, 3), data = Boston))
+```
+
+**Answer:**
+For the predictor 'dis' the cubic coefficient is not statistically significant, however the quadratic is, which could imply that there is a non-linear relationship between the predictor and the response at the quadratic level.
+
+7. rad
+```{r, evalue = F}
+summary(lm(crim ~ poly(rad, 3), data = Boston))
+```
+
+**Answer:**
+For the predictor 'rad' the cubic coefficient is not statistically significant, however the quadratic is, which could imply that there is a non-linear relationship between the predictor and the response at the quadratic level.
+
+8. tax
+```{r, evalue = F}
+summary(lm(crim ~ poly(tax, 3), data = Boston))
+```
+
+**Answer:**
+For the predictor 'tax' the cubic coefficient is not statistically significant, however the quadratic is, which could imply that there is a non-linear relationship between the predictor and the response at the quadratic level.
+
+9.ptratio
+```{r, evalue = F}
+summary(lm(crim ~ poly(ptratio, 3), data = Boston))
+```
+
+**Answer:**
+For the predictor 'ptratio' the cubic coefficient is not statistically significant, however the quadratic is, which could imply that there is a non-linear relationship between the predictor and the response at the quadratic level.
+
+10. lstat
+```{r, evalue = F}
+summary(lm(crim ~ poly(lstat, 3), data = Boston))
+```
+
+**Answer:**
+All of the polynomial values for 'lstat' are statistically significant and so this would imply that there is a non-linear relationship between the predictor and the response at all levels.
+
+11. medv
+```{r, evalue = F}
+summary(lm(crim ~ poly(medv, 3), data = Boston))
+```
+
+**Answer:**
+All of the polynomial values for 'medv' are statistically significant and so this would imply that there is a non-linear relationship between the predictor and the response at all levels.
 
 ## Bonus question (20pts)
+For multiple linear regression, show that $R^2$ is equal to the correlation between the response vector $\mathbf{y} = (y_1, \ldots, y_n)^T$ and the fitted values $\hat{\mathbf{y}} = (\hat y_1, \ldots, \hat y_n)^T$. 
 
-For multiple linear regression, show that $R^2$ is equal to the correlation between the response vector $\mathbf{y} = (y_1, \ldots, y_n)^T$ and the fitted values $\hat{\mathbf{y}} = (\hat y_1, \ldots, \hat y_n)^T$. That is
+### Answer 1:
+
 $$
 R^2 = 1 - \frac{\text{RSS}}{\text{TSS}} = [\operatorname{Cor}(\mathbf{y}, \hat{\mathbf{y}})]^2.
+$$
+
+$$
+\begin{align}
+\text{Cor}(x, y) \\
+&= \frac{\sum_{i} (x_i - \bar{x})(y_i - \bar{y})}
+{\sqrt{\sum_{i} (x_i - \bar{x})^2 \sum_{i} (y_i - \bar{y})^2}} \\
+&= \frac{(\mathbf{x} - \frac{1}{n}\mathbf{J}\bar{x})^T(\mathbf{y} - \frac{1}{n}\mathbf{J}\bar{y})}
+{\sqrt{(\mathbf{x} - \frac{1}{n}\mathbf{J}\bar{x})^T(\mathbf{x} - \frac{1}{n}\mathbf{J}\bar{x}) (\mathbf{y} - \frac{1}{n}\mathbf{J}\bar{y})^T(\mathbf{y} - \frac{1}{n}\mathbf{J}\bar{y})}}
+\end{align}
+$$
+Where J is a matrix of ones and $\bar{x}$ is the mean of x.
+
+For R^2, we have:
+
+$$
+\begin{align}
+R^2 
+&= 1 - \frac{\text{RSS}}{\text{TSS}} \\
+&= 1 - \frac{\sum_{i} (y_i - \hat{y}_i)^2}{\sum_{i} (y_i - \bar{y}_i)^2} \\
+&= 1 - \frac{(Y - HY)^T(Y - HY)}{(Y - \frac{J}{n}JY)^T(Y - \frac{J}{n}JY)} \\
+&= 1 - \frac{Y^T(I - H)^T(I - H)Y}{Y^T(I - \frac{J}{n}J)^T(I - \frac{J}{n}J)Y}
+\end{align}
+$$
+Where H = X(X^TX)^{-1}X^T and I is the identity matrix.
+
+Finally we have
+$$
+\text{Cor}(Y, \hat{Y})^2 = \frac{(Y - \frac{J}{n}JY)^T(Y - \frac{J}{n}J\hat{Y})}{\left[(Y - \frac{J}{n}JY)^T(Y - \frac{J}{n}JY)\right]\left[(\hat{Y} - \frac{J}{n}J\hat{Y})^T(\hat{Y} - \frac{J}{n}J\hat{Y})\right]}
+$$
+where 
+$$
+\hat{Y} = X(X^TX)^{-1}X^TY = HY 
+$$
+
+
+
+
+### Answer 2:
+$$
+\begin{align}
+R^2 
+&= 1 - \frac{\text{RSS}}{\text{TSS}} \\
+&= \frac{\text{TSS}-\text{RSS}}{\text{TSS}} \\
+&= \frac{\text{ESS}}{\text{TSS}}\\
+\end{align}
+$$
+Since $\hat y_i = \hat{\beta}_0 + \hat{\beta}_1 x_{i1} + \ldots + \hat{\beta}_p x_{ip}$, we have
+$$
+\text{RSS} = \sum_{i=1}^n (y_i - \hat y_i)^2\\
+\text{ESS} = \sum_{i=1}^n (\hat y_i - \bar{\hat y})^2\\
+\text{TSS} = \sum_{i=1}^n (y_i - \bar y)^2 \\
+$$
+Hence, 
+$$
+\begin{align}
+\frac{\text{ESS}}{\text{TSS}} \\
+&= \frac{\sum_{i=1}^n (\hat y_i - \bar y)^2}{\sum_{i=1}^n (y_i - \bar y)^2} \\
+&= \frac{\sum_{i=1}^n (\hat y_i - \bar y)^2 \sum_{i=1}^n(\hat y_i - \bar{\hat y})^2}{\sum_{i=1}^n (y_i - \bar y)^2 \sum_{i=1}^n(\hat y_i - \bar{\hat y})^2} \\
+&= \frac{[\sum_{i=1}^n (y_i - \bar y)(\hat y_i - \bar{\hat y})]^2}{[\sum_{i=1}^n (y_i - \bar y)^2][\sum_{i=1}^n(\hat y_i - \bar{\hat y})^2]} \\
+&= [\frac{\operatorname{Cor}(\mathbf{y_i}, \hat{\mathbf{y_i}})}{\sqrt(\operatorname{Var(y_i)}\sqrt(\operatorname{Var(\hat y_i)})  }]^2 \\
+&= [\operatorname{Cor}(\mathbf{y}, \hat{\mathbf{y}})]^2.
+\end{align}
 $$
 
