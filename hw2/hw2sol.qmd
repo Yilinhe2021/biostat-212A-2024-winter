@@ -1,0 +1,455 @@
+---
+title: "Biostat 212a Homework 2"
+subtitle: "Due Feb 6, 2024 @ 11:59PM"
+author: "Yilin He, UID:905789961"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+## ISL Exercise 4.8.1 (10pts)
+
+Using a little bit of algebra, prove that (4.2) is equivalent to (4.3). In other words, the logistic function representation and logit representation for the logistic regression model are equivalent.
+
+**Answer:**
+
+The logistic regression model is given by
+$$
+\begin{align}
+P(x) &= \frac{e^{\beta_0 + \beta_1 x}}{1 + e^{\beta_0 + \beta_1 x}} \\
+\end{align}
+$$
+We can write the logistic regression model in terms of the logit function as
+$$
+\begin{align}
+P(x)(1+e^{\beta_0 + \beta_1 x}) &= e^{\beta_0 + \beta_1 x} \\
+\frac{P(x)}{\frac{1}{1+e^{\beta_0 + \beta_1 x}}} &= e^{\beta_0 + \beta_1 x} \\
+\frac{P(x)}{\frac{1+(e^{\beta_0 + \beta_1 x}-e^{\beta_0 + \beta_1 x})}{1+e^{\beta_0 + \beta_1 x}}} &= e^{\beta_0 + \beta_1 x} \\
+\frac{P(x)}{\frac{1+e^{\beta_0 + \beta_1 x}}{1+e^{\beta_0 + \beta_1 x}}+\frac{-e^{\beta_0 + \beta_1 x}}{1+e^{\beta_0 + \beta_1 x}}} &= e^{\beta_0 + \beta_1 x} \\
+\frac{P(x)}{1 - \frac{e^{\beta_0 + \beta_1 x}}{1 + e^{\beta_0 + \beta_1 x}}} &= e^{\beta_0 + \beta_1 x} \\
+\end{align}
+$$
+Since $\frac{e^{\beta_0 + \beta_1 x}}{1 + e^{\beta_0 + \beta_1 x}} = P(x)$, we have
+$$
+\begin{align}
+\frac{P(x)}{1 - P(x)} &= e^{\beta_0 + \beta_1 x}
+\end{align}
+$$
+
+This proves that the logistic function representation and logit representation for the logistic regression model are equivalent.
+
+
+## ISL Exercise 4.8.6 (10pts)
+Suppose we collect data for a group of students in a statistics class with variables $X_1$ = hours studied, $X_2$ = undergrad GPA, and Y = receive an A. We fit a logistic regression and produce estimated coefficient, $\hat{\beta}_0$ = −6, $\hat{\beta}_1$ = 0.05, $\hat{\beta}_2$ = 1.
+
+### (a) 
+Estimate the probability that a student who studies for 40 h and has an undergrad GPA of 3.5 gets an A in the class.
+
+**Answer:**
+
+The probability that a student gets an A in the class is given by
+$$
+\begin{align}
+P(X) 
+&= \frac{e^{\hat{\beta_0} + \hat{\beta_1} X_1 + \hat{\beta_2} X_2}}{1 + e^{\hat{\beta_0} + \hat{\beta_1} X_1 + \hat{\beta_2} X_2}} \\
+&= \frac{e^{-6 + 0.05*40 + 1*3.5}}{1 + e^{-6 + 0.05*40 + 1*3.5}} \\
+&= \frac{e^{-0.05}}{1 + e^{-0.05}} \\
+\end{align}
+$$
+let's calculate the probability in R:
+```{r}
+exp(-6 + 0.05*40 + 1*3.5) / (1 + exp(-6 + 0.05*40 + 1*3.5))
+```
+
+Therefore, 37.75% is the probability that a student who studies for 40 h and has an undergrad GPA of 3.5 gets an A in the class.
+
+
+### (b) 
+How many hours would the student in part (a) need to study to have a 50 % chance of getting an A in the class?
+
+**Answer:**
+
+Since we prove the logistic function representation and logit representation for the logistic regression model are equivalent in the question 4.8.1, we can use the logit representation to solve this question.
+$$
+\begin{align}
+P(X) &= \frac{e^{\hat{\beta_0} + \hat{\beta_1} X_1 + \hat{\beta_2} X_2}}{1 + e^{\hat{\beta_0} + \hat{\beta_1} X_1 + \hat{\beta_2} X_2}} \\
+\frac{P(x)}{1 - P(x)} &= e^{\hat{\beta_0} + \hat{\beta_1} X_1 + \hat{\beta_2} X_2} \\
+\log\left(\frac{P(X)}{1 - P(X)}\right) &= \hat{\beta_0} + \hat{\beta_1} X_1 + \hat{\beta_2} X_2 \\
+\end{align}
+$$
+Let plug in the values of $\hat{\beta_0}$, $\hat{\beta_1}$, and $\hat{\beta_2}$ to solve for $X_1$.
+$$
+\begin{align}
+\log\left(\frac{0.5}{1 - 0.5}\right) &= -6 + 0.05X_1 + 3.5 \\
+\log\left(\frac{0.5}{0.5}\right) &= 0.05X_1 - 2.5 \\
+\log\left(1\right) &= 0.05X_1 - 2.5 \\
+0.05X_1 &= \log\left(1\right)  + 2.5 \\
+X_1 &= (\log\left(1\right) + 2.5 )/ 0.05 \\
+\end{align}
+$$
+let's calculate the number of hours in R:
+```{r}
+(log(1) + 2.5) / 0.05
+```
+
+Therefore, 50 hours of study would be needed to have a 50% chance of getting an A in the class.
+
+
+## ISL Exercise 4.8.9 (10pts)
+This problem has to do with odds.
+
+### (a) 
+On average, what fraction of people with an odds of 0.37 of defaulting on their credit card payment will in fact default?
+
+**Answer:**
+
+The probability that a person will default on their credit card payment is given by
+
+$$
+\begin{align}
+P(X) &= \frac{Odds}{1 + Odds} \\
+&= \frac{0.37}{1 + 0.37} \\
+&= \frac{0.37}{1.37} \\
+&\approx 0.27
+\end{align}
+$$
+Therefore, 27% of people with an odds of 0.37 of defaulting on their credit card payment will in fact default.
+
+
+### (b) 
+Suppose that an individual has a 16% chance of defaulting on her credit card payment. What are the odds that she will default?
+
+**Answer:**
+
+The odds that an individual will default on her credit card payment is given by
+$$
+\begin{align}
+Odds &= \frac{P(X)}{1-P(X)} \\
+&= \frac{0.16}{1-0.16} \\
+&= \frac{0.16}{0.84} \\
+&\approx 0.1905
+\end{align}
+$$
+
+Therefore, 19.05% chance of defaulting on her credit card payment.
+
+
+## ISL Exercise 4.8.13 (a)-(i) (50pts)
+This question should be answered using the Weekly data set, which is part of the ISLR2 package. This data is similar in nature to the Smarket data from this chapter’s lab, except that it contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+```{r evalue = FALSE}
+library(ISLR2)
+library(corrplot)
+```
+
+### (a) 
+Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any patterns?
+
+```{r}
+summary(Weekly)
+```
+
+```{r}
+pairs(Weekly)
+```
+
+```{r}
+corrplot(cor(Weekly[,-9]), method="ellipse")
+```
+
+**Answer:**
+
+Base on the pair plot, the truly notable thing is the patterns between the ‘Year’ and ‘Volume’ variables was appears to be a positive correlation.
+
+Base on the correlation matrix, there appears to be a positive correlation between ‘Year’ and ‘Volume’ only. The other variables do not appear to be correlated with each other.
+
+Finally, the summary statistics show that the Lag variables are very similar to each other and ‘Today’. There doesn’t appear to to be any patterns except for an increase in volume from 1989 to 2001.
+
+
+
+### (b) 
+Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+
+```{r}
+glm.fit = glm(Direction ~ Lag1+Lag2+Lag3+Lag4+Lag5+Volume, 
+                   data=Weekly, family=binomial)
+summary(glm.fit)
+```
+
+**Answer:**
+
+According to the results, only 'Lag2' is statistically significant at the 5% level. The p-value for 'Lag2' is 0.025, which is less than 0.05. The other predictors have p-values greater than 0.05, which means they are not statistically significant.
+
+
+### (c) 
+Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+
+```{r}
+glm_preds = ifelse(
+  predict(glm.fit, type="response") > 0.5, 
+  "Up", 
+  "Down"
+)
+glm_cfm = table(glm_preds, Weekly$Direction)
+glm_cfm
+```
+```{r}
+(glm_cfm['Up','Up'] + glm_cfm['Down','Down']) / sum(glm_cfm)
+```
+
+**Answer:**
+
+The logistic regression model's overall accuracy is 56%, as it correctly predicted the market direction on 611 out of 1089 days. This reflects a training error rate of 44%. When examining predictions for "Up" market days, the model was correct 557 out of the 987 times it predicted an "Up" direction, translating to an accuracy of 56.4% for such predictions.
+
+
+### (d) 
+Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+```{r}
+train = Weekly$Year < 2009
+Test = Weekly[!train ,] 
+Test_Direction= Weekly$Direction[!train]
+
+glm_fit2 = glm(Direction ~ Lag2, data=Weekly, family=binomial, subset=train)
+summary(glm_fit2)
+```
+
+```{r}
+Weekly$Year = as.numeric(Weekly$Year)
+
+logis_pred2 = ifelse(
+  predict(glm_fit2, Weekly[!train,], type="response") > 0.5, 
+  "Up", 
+  "Down"
+)
+
+glm_cfm2 = table (logis_pred2, Weekly$Direction[!train])
+glm_cfm2 
+```
+
+```{r}
+(glm_cfm2['Up','Up'] + glm_cfm2['Down','Down']) / sum(glm_cfm2)
+```
+
+**Answer:**
+
+The accuracy for this period is 65 out of 104, which is about 62.5%.  This means that when only using Lag2 as the predictor, the model correctly predicted the market direction for the years 2009 and 2010 with a success rate significantly higher than a random chance.
+
+
+### (e) 
+Repeat (d) using LDA.
+
+```{r evalue = FALSE}
+library(MASS)
+```
+
+```{r}
+lda_fit = lda(Direction ~ Lag2, data=Weekly, subset=train)
+lda_fit
+```
+
+```{r}
+lda_pred = predict(lda_fit, Weekly[!train,])$class
+lda_clm = table(lda_pred,Weekly$Direction[!train])
+lda_clm
+```
+```{r}
+(lda_clm['Up','Up'] + lda_clm['Down','Down']) / sum(lda_clm)
+```
+
+
+**Answer:**
+
+The LDA model produced a confusion matrix with 9 true negatives, 5 false positives, 34 false negatives, and 56 true positives.  Overall, it had an accuracy rate of approximately 62.5% in predicting the market direction during the test period.  This shows that both LDA and logistic regression models had similar levels of accuracy when using Lag2 as the only predictor.
+
+
+### (f) 
+Repeat (d) using QDA.
+
+```{r}
+qda_fit = qda(Direction ~ Lag2, data=Weekly, subset=train) 
+qda_fit
+```
+
+```{r}
+qda_pred = predict(qda_fit,Weekly[!train,])$class
+qda_clm = table(qda_pred, Weekly[!train,]$Direction)
+qda_clm
+```
+```{r}
+(qda_clm['Up','Up'] + qda_clm['Down','Down']) / sum(qda_clm)
+```
+
+**Answer:**
+
+Instead of correctly predicting any "Down" weeks, this model failed to do so resulting in zero true negatives and false positives.  However, it accurately predicted around 61 "Up" weeks while incorrectly identifying around43 as negative.  As a result, its overall accuracy was about58.65%.  This suggests that QDA was slightly more effective than LDA and logistic regression in forecasting market trends but fell short in recognizing downward trends.
+
+
+### (g) 
+Repeat (d) using KNN with K = 1.
+
+```{r}
+library(class)
+set.seed(1)
+
+train_data <- as.matrix(Weekly[train,]$Lag2)
+test_data = as.matrix(Weekly[!train,]$Lag2)
+
+train_direction = Weekly$Direction[train]
+test_direction = Weekly$Direction[!train]
+
+knn_pred = knn(train_data, test_data, train_direction, k=1)
+
+table(knn_pred, test_direction)
+```
+
+```{r}
+sum(knn_pred == test_direction) / length(test_direction)
+```
+
+**Answer:**
+
+The K-Nearest Neighbors (KNN) algorithm with k =1 yielded an overall accuracy of50%.  The matrix shows that the model predicted21true negatives and31true positives while also incorrectly predicting30false positivesand22false negatives. This result indicates that using KNN with a single nearest neighbor does not provide any predictive advantage over random guessing for this particular task.
+
+### (h) 
+Repeat (d) using naive Bayes.
+
+```{r}
+library(e1071)
+naive_fit = naiveBayes(Direction ~ Lag2, data=Weekly, subset=train)
+naive_pred = predict(naive_fit, Weekly[!train,])
+
+naive_clm = table(naive_pred,Test_Direction)
+naive_clm
+```
+
+```{r}
+(naive_clm['Up','Up'] + naive_clm['Down','Down']) / sum(naive_clm)
+```
+
+
+**Answer:**
+
+The Naive Bayes classifier was applied to predict market direction, but it only predicted "Up" for all test instances. This resulted in 61 true positives and 43 false negatives, with no true negatives or false positives. The accuracy of this classifier was around 58.65%, similar to the QDA model. However, the fact that the Naive Bayes model didn't predict any "Down" movements suggests a strong bias towards predicting upward market movement.
+
+
+### (i) 
+Which of these methods appears to provide the best results on this data?
+
+**Answer:**
+Among the evaluated methods, Logistic Regression and Linear Discriminant Analysis (LDA) showed the highest accuracy of 62.5% on the test data. These models not only surpassed the random guessing benchmark of 50%, but also had the ability to predict both "Up" and "Down" market movements.
+
+In contrast, Quadratic Discriminant Analysis (QDA) and Naive Bayes slightly improved their accuracy to 58.65%, but they were unable to predict any "Down" movements, which could be a significant limitation depending on the requirements of your application.
+
+The K-Nearest Neighbors (KNN) approach with k = 1 performed poorly with an accuracy of just 50%, equivalent to random guessing.
+
+Therefore, Logistic Regression and LDA emerge as more robust methods for this dataset as they balance accuracy with the ability to discern both classes of market direction.
+
+
+## Bonus question: ISL Exercise 4.8.13 Part (j) (30pts)
+### (j) 
+Experiment with different combinations of predictors, including possible transformations and interactions, for each of the methods. Report the variables, method, and associated confusion matrix that appears to provide the best results on the held out data. Note that you should also experiment with values for K in the KNN classifier.
+
+```{r}
+# Logistic regression
+set.seed(1)
+glm.fit <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4, data=Weekly, family=binomial, subset=train)
+glm.probs <- predict(glm.fit, Weekly[!train,], type="response") > 0.5
+glm.pred <- ifelse(glm.probs, "Up", "Down")
+glm.clm <- table(glm.pred, Weekly$Direction[!train])
+mean(glm.pred == Weekly$Direction[!train])
+```
+
+```{r}
+# LDA
+lda.fit <- lda(Direction ~ Lag1 + Lag2 + Lag3 + Lag4, data=Weekly, subset=train)
+lda.probs <- predict(lda.fit, Weekly[!train,])$class
+lda.clm <- table(lda.probs, Weekly$Direction[!train])
+mean(lda.probs == Weekly$Direction[!train])
+```
+
+```{r}
+# QDA
+qda.fit <- qda(Direction ~ Lag1 + Lag2 + Lag3 + Lag4, data=Weekly, subset=train)
+qda.probs <- predict(qda.fit, Weekly[!train,])$class
+qda.clm <- table(qda.probs, Weekly$Direction[!train])
+mean(qda.probs == Weekly$Direction[!train])
+```
+
+```{r}
+# KNN
+knn.pred <- knn(train_data, test_data, train_direction, k=20)
+knn.clm <- table(knn.pred, test_direction)
+mean(knn.pred == test_direction)
+```
+
+```{r}
+# Naive Bayes
+naive_fit = naiveBayes(Direction ~ Lag1 + Lag2 + Lag3 + Lag4, data=Weekly, subset=train)
+naive_pred = predict(naive_fit, Weekly[!train,])
+naive_clm = table(naive_pred,Test_Direction)
+mean(naive_pred == Test_Direction)
+```
+
+**Answer:**
+After experimenting with different combinations of predictors and methods, the best results on the held-out data were achieved using the Logistic Regression model with the predictors Lag1, Lag2, Lag3, and Lag4. This model achieved an accuracy of 56.73% on the test data, which was the highest among the methods and predictor combinations tested. The confusion matrix for this model showed 59 true positives, 42 true negatives, 39 false positives, and 64 false negatives. This result indicates that the Logistic Regression model with these predictors was the most effective in predicting market direction for the Weekly dataset.
+
+
+## Bonus question: ISL Exercise 4.8.4 (30pts)
+When the number of features p is large, there tends to be a deterioration in the performance of KNN and other local approaches that perform prediction using only observations that are near the test observation for which a prediction must be made. This phenomenon is known as the curse of dimensionality, and it ties into the fact that non-parametric approaches often perform poorly when p is large. We will now investigate this curse.
+
+### (a) 
+Suppose that we have a set of observations, each with measurements on p = 1 feature, X. We assume that X is uniformly (evenly) distributed on [0, 1]. Associated with each observation is a response value. Suppose that we wish to predict a test observation’s response using only observations that are within 10 % of the range of X closest to that test observation. For instance, in order to predict the response for a test observation with X = 0.6, we will use observations in the range [0.55,0.65]. On average, what fraction of the available observations will we use to make the prediction?
+
+**Answer:**
+
+Since X is uniformly distributed on [0, 1], we consider a range of 10% for each test observation, which is [X - 0.05, X + 0.05]. The width of this range divided by the total range is 0.1, which is the fraction of observations within this range. On average, we will use 10% of the available observations to make the prediction.
+
+### (b) 
+Now suppose that we have a set of observations, each with measurements on p = 2 features, X1 and X2. We assume that (X1, X2) are uniformly distributed on [0, 1] × [0, 1]. We wish to predict a test observation’s response using only observations that are within 10 % of the range of X1 and within 10 % of the range of X2 closest to that test observation. For instance, in order to predict the response for a test observation with X1 = 0.6 and X2 = 0.35, we will use observations in the range [0.55, 0.65] for X1 and in the range [0.3,0.4] for X2. On average, what fraction of the available observations will we use to make the prediction?
+
+**Answer:**
+
+To analyze features X1 and X2, we will use a range of 10% of the total observations for each feature. To analyze features X1 and X2, we will use a range of 10% of the total observations for each feature. This means that we will use 10% of the observations for X1 and 10% for X2. As we are analyzing both features simultaneously, we will use the product of the fractions for each feature, resulting in 1% of the available observations on average.
+ 
+
+### (c) 
+Now suppose that we have a set of observations on p = 100 fea- tures. Again the observations are uniformly distributed on each feature, and again each feature ranges in value from 0 to 1. We wish to predict a test observation’s response using observations within the 10 % of each feature’s range that is closest to that test observation. What fraction of the available observations will we use to make the prediction?
+
+**Answer:**
+
+We are examining 100 features, each with a range of 0 to 1. For each test observation, we are only considering the closest 10% of the range for each feature. This means we are using only 10% (0.1) of the available observations for each feature. As we have 100 features, the fraction of available observations used will be extremely small, close to 0.1^100, which is virtually zero.
+
+
+### (d) 
+Using your answers to parts (a)–(c), argue that a drawback of KNN when p is large is that there are very few training observations “near” any given test observation.
+
+**Answer:**
+
+The k-nearest neighbors (KNN) algorithm becomes less effective when the number of features (p) is large, as demonstrated in parts (a)–(c).  This is because it becomes difficult to find training observations that are close to any given test observation when there are numerous features, each contributing to the distance calculation between observations.  The reason for this is that as the number of features increases, the fraction of available observations that fall within the 10% range of each feature decreases significantly, even if uniformly distributed.  This can make it difficult for KNN to find enough nearby training data to make accurate predictions, potentially resulting in inefficiencies and reduced performance.
+
+### (e) 
+
+Now suppose that we wish to make a prediction for a test observation by creating a p-dimensional hypercube centered around the test observation that contains, on average, 10 % of the train- ing observations. For p = 1,2, and 100, what is the length of each side of the hypercube? Comment on your answer.
+
+Note: A hypercube is a generalization of a cube to an arbitrary number of dimensions. When p = 1, a hypercube is simply a line segment, when p = 2 it is a square, and when p = 100 it is a 100-dimensional cube.
+
+**Answer:**
+
+To predict using a hypercube that encompasses 10% of the training observations, on average, in p-dimensions, the length of each side of the hypercube varies with the number of features (p). If p = 1, the hypercube is a line segment with a length of 0.1 of the total feature range. If p = 2, it's a square, and each side's length is also 0.1 of the total range of each feature. However, when p equals 100, representing a 100-dimensional cube, each side's length noticeably decreases to maintain the 10% coverage. This decrease is not directly calculable from previous answers. As the number of features increases, each side of the hypercube diminishes considerably, making it challenging to accurately capture the surrounding training observations in high-dimensional spaces.
+
