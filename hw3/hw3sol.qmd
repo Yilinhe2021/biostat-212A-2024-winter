@@ -1,0 +1,693 @@
+---
+title: "Biostat 212A Homework 3"
+subtitle: "Due Feb 20, 2024 @ 11:59PM"
+author: "Yilin He, UID: 905789961"
+date: today
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+## ISL Exercise 5.4.2 (10pts)
+We will now derive the probability that a given observation is part of a bootstrap sample. Suppose that we obtain a bootstrap sample from a set of n observations.
+
+### (a) 
+What is the probability that the first bootstrap observation is not the jth observation from the original sample? Justify your answer.
+
+**Answer:**
+Since the first bootstrap observation can be any of the n observations from the original sample, the probability that it is not the jth observation is: $1 − 1/𝑛$
+
+### (b) 
+What is the probability that the second bootstrap observation is not the jth observation from the original sample?
+
+**Answer:**
+Since the second bootstrap observation can be any of the n observations from the original sample, the probability that it is not the jth observation is: $1 − 1/𝑛$
+
+### (c) 
+Argue that the probability that the jth observation is not in the bootstrap sample is $(1 − 1/n)^n$.
+
+**Answer:**
+Since we have n observations and each observation has a probability of $1 − 1/𝑛$ of not being in the bootstrap sample, the probability that the jth observation is not in the bootstrap sample is: $(1 − 1/𝑛)^n$
+
+### (d) 
+When n = 5, what is the probability that the jth observation is in the bootstrap sample?
+
+**Answer:**
+Since we have n = 5 observations and each observation has a probability of $1 − 1/5$ of being in the bootstrap sample, we are attempting to solve for when it is the jth observation. We subtract the probability of the observation not being the jth observation. So,the probability that the jth observation is in the bootstrap sample is: $P = 1- (1 - \frac{1}{5})^5 = 1 - 0.32768 = 0.67232$
+
+
+### (e) 
+When n = 100, what is the probability that the jth observation is in the bootstrap sample?
+
+**Answer:**
+As same as question (d), we have n = 100 observations and each observation has a probability of $1 − 1/100$ of being in the bootstrap sample. We subtract the probability of the observation not being the jth observation. So, the probability that the jth observation is in the bootstrap sample is: $P = 1- (1 - \frac{1}{100})^{100} = 1 - 0.3660 = 0.6340$
+
+
+### (f) 
+When n = 10, 000, what is the probability that the jth observation is in the bootstrap sample?
+
+**Answer:**
+As same as question (d), we have n = 10000 observations and each observation has a probability of $1 − 1/10000$ of being in the bootstrap sample. We subtract the probability of the observation not being the jth observation. So, the probability that the jth observation is in the bootstrap sample is: $P = 1- (1 - \frac{1}{10000})^{10000} = 1 - 0.3677 = 0.6323$
+
+
+### (g) 
+Create a plot that displays, for each integer value of n from 1 to 100,000, the probability that the jth observation is in the bootstrap sample. Comment on what you observe.
+
+**Answer:**
+
+```{r}
+library(ggplot2)
+n = 1:100000
+n_values <- data.frame(n)
+p = 1-(1-1/n)^n
+ggplot(n_values, aes(x = n, y = p)) + 
+  geom_line(color = "blue") + 
+  scale_x_log10() +
+  labs(title = "Probability (p) vs n observations",
+       x = "Value of n",
+       y = "Probability") + 
+  theme_minimal()
+```
+
+```{r}
+mean(p)
+```
+
+The plot shows that the probability that the *j*th observation is in the bootstrap sample decreases as *n* increases. The mean of the probability is 0.6321.
+
+
+### (h) 
+We will now investigate numerically the probability that a boot-strap sample of size n = 100 contains the jth observation. Here j = 4. We repeatedly create bootstrap samples, and each time we record whether or not the fourth observation is contained in the bootstrap sample.
+
+**Answer:**
+
+```{r}
+store = rep(NA, 10000) 
+n <- 100
+j <- 4
+for(i in 1:10000){
+  store[i] = sum(sample(1:n, rep = TRUE) == j ) > 0 
+  }
+cat("Probability that the jth observation is in the bootstrap sample:", mean(store), "\n")
+```
+
+
+## ISL Exercise 5.4.9 (20pts)
+
+We will now consider the Boston housing data set, from the ISLR2 library.
+
+```{r setup}
+library(ISLR2)
+library(boot)
+```
+
+### (a) 
+Based on this data set, provide an estimate for the population mean of medv. Call this estimate μˆ.
+
+**Answer:**
+```{r}
+mu_hat = mean(Boston$medv)
+mu_hat
+```
+
+The estimate for the population mean of medv is 22.53281.
+
+### (b) 
+Provide an estimate of the standard error of μˆ. Interpret this result.
+
+Hint: We can compute the standard error of the sample mean by dividing the sample standard deviation by the square root of the number of observations.
+
+**Answer:**
+```{r}
+length = length(Boston$medv)
+se = sd(Boston$medv) / sqrt(length)
+se
+```
+
+The standard error of the sample mean is 0.4088611. This means that the sample mean is expected to be within 0.4088611 of the true population mean 95% of the time.
+
+
+### (c) 
+Now estimate the standard error of μˆ using the bootstrap. How does this compare to your answer from (b)?
+
+**Answer:**
+```{r}
+medv.fn = function(data, index) {
+  return(mean(data$medv[index]))
+}
+
+set.seed(1)
+boot(Boston, medv.fn, 1000)
+```
+The standard error of the sample mean is 0.4089, which is very close to the standard error calculated in (b). This is expected because the bootstrap method is a way of estimating the standard error of a statistic, and the standard error calculated in (b) is the true standard error of the sample mean.
+
+### (d) 
+Based on your bootstrap estimate from (c), provide a 95 % confidence interval for the mean of medv. Compare it to the results obtained using t.test(Boston$medv).
+
+Hint: You can approximate a 95 % confidence interval using the formula $[\hat μ − 2SE(\hat μ), \hat μ + 2SE(\hat μ)]$.
+
+**Answer:**
+```{r}
+mu = mean(Boston$medv)
+mu-2*se
+mu+2*se
+```
+
+```{r}
+t.test(Boston$medv)
+```
+By using the t.test function, we can see that the 95% confidence interval for the mean of medv is (21.72953, 23.33609). This is very close to the 95% confidence interval calculated using the formula, which is (21.71508, 23.35054). This is expected because the t.test function uses the t-distribution to calculate the confidence interval, and the t-distribution is similar to the normal distribution when the sample size is large.
+
+
+### (e) 
+Based on this data set, provide an estimate, μˆmed, for the median value of medv in the population.
+
+**Answer:**
+
+```{r}
+med = median(Boston$medv)
+med
+
+```
+
+The estimate for the median value of medv in the population is 21.2.
+
+### (f) 
+Wenowwouldliketoestimatethestandarderrorofμˆmed.Unfortunately, there is no simple formula for computing the standard error of the median. Instead, estimate the standard error of the median using the bootstrap. Comment on your findings.
+
+**Answer:**
+
+```{r}
+# Bootstrap estimate of the standard error of the median value.
+boot.fn3 = function(data, index){ 
+  return(median(data[index, "medv"]))
+  } 
+boot(Boston, boot.fn3, 1000)
+```
+The value of the median is 21.2, and the standard error of the median is 0.379. This is relatively low when compared to the median value of 21.2. 
+
+### (g) 
+Based on this data set, provide an estimate for the tenth percentile of medv in Boston census tracts. Call this quantity μˆ0.1. (You can use the quantile() function.)
+
+**Answer:**
+
+```{r}
+mu_0.1 = quantile(Boston$medv, 0.1)
+mu_0.1
+```
+
+The 10% percentile of medv in Boston census tracts is 12.75. 
+
+
+### (h)
+Use the bootstrap to estimate the standard error of μˆ0.1. Comment on your findings.
+
+**Answer:**
+
+```{r}
+# Bootstrap estimate of the standard error of the 10th percentile value.
+boot.fn4 = function(data, index){ 
+  X = data$medv[index]
+  Y = quantile(X, 0.1)
+  return(Y)
+}
+boot.fn4(Boston, 1:10)
+boot(Boston,boot.fn4,1000)
+
+```
+
+It can be seen that the standard error of the 10th percentile value is 0.496. This is relatively low when compared to the 10th percentile value of 12.75.
+
+
+## Least squares is MLE (10pts)
+
+Show that in the case of linear model with Gaussian errors, maximum likelihood and least squares are the same thing, and $C_p$ and AIC are equivalent.
+
+**Answer:**
+
+The Akaike Information Criterion (AIC) and the Mallows' $C_p$ are both used to estimate the quality of a model. The AIC is defined as:
+$$AIC = -2\log(L) + 2d$$
+where $L$ is the maximum likelihood of the model, and $d$ is the number of parameters in the model. First, solve for the likelihood function for Gaussian errors.  The MLE estimators for $\hat{\mu}$ and $\sigma^2$ are known, so the maximized value of the likelihood formula is then expressed as:
+
+$$
+\begin{align}
+f((Y - \hat{Y})|0, \sigma^2) &= \frac{1}{\sqrt{2\pi\sigma^2}}e^\left(-\frac{(y - \hat{y})^2}{2\sigma^2}\right) \\
+L(\mu,\sigma^2; \epsilon_1, ..., \epsilon_n) &= \prod_{i=1}^{n} (\frac{1}{\sqrt{2\pi\sigma^2}})^ne^\left(-\frac{\sum_{i=1}^n(y_i - \hat{y}_i)^2}{2\sigma^2}\right) \\
+L(\theta; \epsilon_1, ..., \epsilon_n) &= -\frac{n}{2}\log(2\pi) - \frac{n}{2}\log(\hat{\sigma}^2) - \frac{RSS}{2\sigma^2} \\
+\end{align}
+$$
+
+
+At the maximum likelihood estimate, the log-likelihood is maximized, so the first derivative of the log-likelihood with respect to the parameters is zero. The MLE estimators for $\hat{\mu}$ and $\sigma^2$ are known, so the maximized value of the likelihood formula is then expressed as:
+
+$$
+\begin{align}
+AIC 
+&= -2\log(L) + 2d \\
+&= -2\left(-\frac{n}{2}\log(2\pi) - \frac{n}{2}\log(\hat{\sigma}^2) - \frac{RSS}{2\sigma^2}\right) + 2d \\
+&= n\log(2\pi\hat{\sigma}^2) + \frac{RSS}{\hat{\sigma}^2} + 2d \\
+\end{align}
+$$
+A fitted least squares model containing $d$ predictors and $\hat{\sigma}^2$ as an estimate of the variance of the error term has a residual sum of squares (RSS) of:
+
+$$
+\begin{align}
+C_p &= \frac{1}{n}(RSS + 2d\hat{\sigma}^2) \\
+\frac{n}{\sigma^2}C_p &= \frac{1}{\sigma^2}RSS + 2d - n \\
+\end{align}
+$$
+
+finally, the AIC and $C_p$ are equivalent:
+$$
+AIC = n\log(2\pi{\sigma}^2) + \frac{n}{{\sigma}^2}C_p 
+$$
+
+
+## ISL Exercise 6.6.1 (10pts)
+We perform best subset, forward stepwise, and backward stepwise selection on a single data set. For each approach, we obtain p + 1 models, containing 0, 1, 2, . . . , p predictors. Explain your answers:
+
+
+### (a) 
+Which of the three models with k predictors has the smallest training RSS?
+
+**Answer:**
+  
+Among the three fitted models, the best subset selection model has the smallest training RSS out of all the C(p,k) models.  This model explores all possible combinations of predictors and selects the one with the lowest RSS for each number of predictors (k). The Forward Stepwise Selection model has the smallest RSS among models that add one additional predictor to the Mk+1 model. 
+
+### (b) 
+Which of the three models with k predictors has the smallest test RSS?
+
+**Answer:**
+Comparing test and training RSS is tricky due to model complexity. Best subset selection explores more models, potentially yielding the smallest RSS but risking over-fitting. Forward and backward step-wise selection consider fewer models to avoid over-fitting and aim for the smallest test RSS, but they may not always work well. Despite exploring more models, best subset selection can achieve the smallest test RSS. Cross-validation helps estimate test RSS and choose the best model more intuitively.
+
+### (c) True or False:
+
+i. The predictors in the k-variable model identified by forward stepwise are a subset of the predictors in the (k+1)-variable model identified by forward stepwise selection.
+
+**Answer:**
+• True; the k+1 model is derived by adding a predictor that gives greatest improvement to previous k model.
+
+ii. The predictors in the k-variable model identified by back- ward stepwise are a subset of the predictors in the (k + 1)- variable model identified by backward stepwise selection.
+
+**Answer:**
+• True; the k model is derived by removing the least useful predictor from the k+1 model.
+
+iii. The predictors in the k-variable model identified by back- ward stepwise are a subset of the predictors in the (k + 1)- variable model identified by forward stepwise selection.
+
+**Answer:**
+• False; forward and backward stepwise can select different predictors.
+
+iv. The predictors in the k-variable model identified by forward stepwise are a subset of the predictors in the (k+1)-variable model identified by backward stepwise selection.
+
+**Answer:**
+• False; forward and backward stepwise can select different predictors.
+
+v. The predictors in the k-variable model identified by best subset are a subset of the predictors in the (k + 1)-variable model identified by best subset selection.
+
+**Answer:**
+• False; best subset selection can select different predictors.
+
+
+## ISL Exercise 6.6.3 (10pts)
+
+Suppose we estimate the regression coefficients in a linear regression model by minimizing
+
+$\sum_{i=1}^N (y_i - \beta_0 - \sum_{j=1}^p \beta_j x_{ij})^2$ Subject to $\sum_{j=1}^p |\beta_j| \geq s$
+
+for a particular value of s. For parts (a) through (e), indicate which of i. through v. is correct. Justify your answer.
+
+### (a) 
+As we increase s from 0, the training RSS will:
+i. Increase initially, and then eventually start decreasing in an inverted U shape.
+ii. Decrease initially, and then eventually start increasing in a U shape.
+iii. Steadily increase. 
+iv. Steadily decrease. 
+v. Remain constant.
+
+**Answer:**
+The training RSS will steadily decrease. As s increases the constraint on beta decreases and the RSS reduces until we reach the least squares answer.
+
+### (b) 
+Repeat (a) for test RSS. 
+
+**Answer:**
+The test RSS will decrease initially, and then eventually start increasing in a U shape. As s increases the constraint on beta decreases and the RSS reduces until we reach the least squares answer. Eventually starts increasing as the B values start fitting the training set extremely well, and so over fitting the test set.
+
+### (c) 
+Repeat (a) for variance.
+
+**Answer:**
+The variance will steadily increase. As s increases the constraint on beta decreases and the variance increases.
+
+### (d) 
+Repeat (a) for (squared) bias.
+
+**Answer:**
+The bias will steadily decrease. As s increases the constraint on beta decreases and the bias decreases.
+
+### (e) 
+Repeat (a) for the irreducible error.
+
+**Answer:**
+The irreducible error will remain constant. The irreducible error is a property of the data and does not change with the model.
+
+
+## ISL Exercise 6.6.4 (10pts)
+
+Suppose we estimate the regression coefficients in a linear regression model by minimizing
+
+$$
+\sum_{i=1}^N (y_i - \beta_0 - \sum_{j=1}^p \beta_j x_{ij})^2 + \lambda \sum_{j=1}^p \beta_j^2
+$$
+for a particular value of λ. For parts (a) through (e), indicate which of i. through v. is correct. Justify your answer.
+
+### (a) 
+As we increase λ from 0, the training RSS will:
+i. Increase initially, and then eventually start decreasing in an inverted U shape.
+ii. Decrease initially, and then eventually start increasing in a U shape.
+iii. Steadily increase.
+iv. Steadily decrease.
+v. Remain constant.
+
+**Answer:**
+The training RSS will steadily increase. As λ increases the constraint on beta decreases and the RSS increases.
+
+### (b) 
+Repeat (a) for test RSS. 
+
+**Answer:**
+The test RSS will decrease initially, and then eventually start increasing in a U shape. As λ increases the constraint on beta decreases and the RSS reduces until we reach the least squares answer. Eventually starts increasing as the B values start fitting the training set extremely well, and so over fitting the test set.
+
+### (c) 
+Repeat (a) for variance.
+
+**Answer:**
+The variance will steadily decrease. As λ increases the constraint on beta decreases and the variance decreases.
+
+### (d) Repeat (a) for (squared) bias.
+
+**Answer:**
+The bias will steadily increase. As λ increases the constraint on beta decreases and the bias increases.
+
+### (e) Repeat (a) for the irreducible error.
+
+**Answer:**
+The irreducible error will remain constant. The irreducible error is a property of the data and does not change with the model.
+
+
+## ISL Exercise 6.6.5 (10pts)
+
+It is well-known that ridge regression tends to give similar coefficient values to correlated variables, whereas the lasso may give quite different coefficient values to correlated variables. We will now explore this property in a very simple setting.
+Suppose that $n = 2, p = 2, x_{11} = x_{12}, x_{21} = x_{22}$. Furthermore, suppose that $y_1 + y_2 = 0 \text{, and } x_{11} + x_{21} = 0 \text{, and } x_{12} + x_{22} = 0$,so that the estimate for the intercept in a least squares, ridge regression, or lasso model is zero: βˆ0 = 0.
+
+### (a) 
+Write out the ridge regression optimization problem in this setting.
+
+**Answer:**
+The ridge regression optimization problem is:
+$$
+(y_1 - \hat{\beta_1}x_1 - \hat{\beta_2}x_1)^2 + (y_2 - \hat{\beta_1}x_2 - \hat{\beta_2}x_2)^2 + \lambda(\hat{\beta_1}^2 + \hat{\beta_2}^2)
+$$
+
+### (b) 
+Argue that in this setting, the ridge coefficient estimates satisfy βˆ 1 = βˆ 2 .
+
+**Answer:**
+The ridge coefficient estimates satisfy βˆ 1 = βˆ 2 because the optimization problem is symmetric in βˆ 1 and βˆ 2. The ridge regression optimization problem is:
+
+$$
+\begin{align}
+\hat{\beta_1} (x_1^2 + x_2^2 + \lambda) + \hat{\beta_2}(x_1^2 + x_2^2) &= x_1y_1 + x_2y_2 \\
+\text{and} \\
+\hat{\beta_1} (x_1^2 + x_2^2) + \hat{\beta_2}(x_1^2 + x_2^2 + \lambda) &= x_1y_1 + x_2y_2 \\
+\end{align}
+$$
+
+$$
+\begin{align}
+x_1(y_1 - \hat{\beta_1}x_1 - \hat{\beta_2}x_1) + x_2(y_2 - \hat{\beta_1}x_2 - \hat{\beta_2}x_2) - \lambda\hat{\beta_1} &= 0 \\ \text{and} \\
+x_1(y_1 - \hat{\beta_1}x_1 - \hat{\beta_2}x_1) + x_2(y_2 - \hat{\beta_1}x_2 - \hat{\beta_2}x_2) - \lambda\hat{\beta_2} &= 0 \\
+\end{align}
+$$
+
+$$ 
+\begin{align}
+\hat{\beta_1} &= \frac{x_1y_1 + x_2y_2 - \hat{\beta_2}(x{^2_1} + x{^2_2})}{x_1^2 + x_2^2 + \lambda} \\ 
+\text{and} \\
+\hat{\beta_2} &= \frac{x_1y_1 + x_2y_2 - \hat{\beta_1}(x{^2_1} + x{^2_2})}{x_1^2 + x_2^2 + \lambda} \\
+\end{align}
+$$
+
+
+The same can be done for $\hat{\beta_2}$, and we can see that the two coefficients are equal.
+
+### (c) 
+Write out the lasso optimization problem in this setting.
+
+**Answer:**
+The lasso optimization problem is:
+$$
+(y_1 - \hat{\beta_1}x_1 - \hat{\beta_2}x_1)^2 + (y_2 - \hat{\beta_1}x_2 - \hat{\beta_2}x_2)^2 + \lambda(|\hat{\beta_1}| + |\hat{\beta_2}|)
+$$
+
+
+### (d) 
+Argue that in this setting, the lasso coefficients βˆ1 and βˆ2 are not unique—in other words, there are many possible solutions to the optimization problem in (c). Describe these solutions.
+
+
+**Answer:**
+The lasso coefficients βˆ1 and βˆ2 are not unique because the optimization problem is not differentiable at βˆ1 = βˆ2 = 0. The lasso optimization problem is:
+$$
+\begin{align}
+2[b - a(\beta_1 + \beta_2)]^2 + \lambda(|\beta_1| + |\beta_2|) \\
+\text{subject to} \\
+4a[b - a(\beta_1 + \beta_2)] + \lambda \frac{\beta_1}{|\beta_1|} = 0 \\
+4a[b - a(\beta_1 + \beta_2)] = +/- \lambda \\
+\end{align}
+$$
+
+
+
+## ISL Exercise 6.6.11 (30pts)
+
+
+We will now try to predict per capita crime rate in the Boston data set.
+```{r}
+library(MASS)
+library(GGally)
+```
+
+```{r}
+library(ISLR2)
+library(tidymodels)
+library(tidyverse)
+library(glmnet)
+```
+
+
+### (a) 
+Try out some of the regression methods explored in this chapter, such as best subset selection, the lasso, ridge regression, and PCR. Present and discuss results for the approaches that you consider.
+
+
+```{r}
+Boston <- Boston %>% drop_na()
+set.seed(10)
+Boston_split <- initial_split(Boston, prop = 0.75, strata = crim)
+Boston_train <- training(Boston_split)
+Boston_test <- testing(Boston_split)
+```
+
+```{r}
+# Define the recipe without prepping it
+recip <-
+  recipe(crim ~ ., data = Boston_train) %>%
+  step_dummy(all_nominal()) %>%
+  step_zv(all_predictors()) %>%
+  step_normalize(all_predictors(), -all_outcomes())
+
+# Setup model
+ls_mod <-
+  linear_reg() %>%
+  set_engine("lm")
+
+lasso_mod <-
+  linear_reg(penalty = tune(), mixture = 1.0) %>%
+  set_engine("glmnet")
+
+ridge_mod <-
+  linear_reg(penalty = tune(), mixture = 0.0) %>%
+  set_engine("glmnet")
+
+# Workflow
+ls_wf <- workflow() %>%
+  add_recipe(recip) %>%
+  add_model(ls_mod)
+
+lasso_wf <- workflow() %>%
+  add_recipe(recip) %>%
+  add_model(lasso_mod)
+
+ridge_wf <- workflow() %>%
+  add_recipe(recip) %>%
+  add_model(ridge_mod)
+```
+
+```{r}
+lambda_grid <- grid_regular(penalty(range = c(-2, 3), trans = log10_trans()), levels = 100)
+folds <- vfold_cv(Boston_train, v = 10)
+```
+
+```{r}
+ls_fit <-
+  ls_wf %>%
+  fit(data = Boston_train)
+
+predicted_values <- predict(ls_fit, new_data = Boston_train) %>% pull(.pred)
+
+ls_cv <- sqrt(mean((Boston_train$crim - predicted_values)^2))
+
+lasso_fit <- 
+  lasso_wf %>%
+  tune_grid(resamples = folds, grid = lambda_grid)
+
+Ridge_fit <-
+  ridge_wf %>%
+  tune_grid(resamples = folds, grid = lambda_grid)
+
+lasso_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "rmse") %>%
+  ggplot(mapping = aes(x = penalty, y = mean)) +
+  geom_point() +
+  labs(x = "Penalty", y = "CV RMSE") +
+  scale_x_log10(labels = scales::label_number())
+```
+
+```{r}
+lassotibble <- lasso_fit %>%
+show_best("rmse")
+lasso_cv <- lassotibble[[1,4]]
+best_lasso <- lasso_fit %>%
+select_best("rmse")
+```
+
+```{r}
+Ridge_fit %>%
+  collect_metrics() %>%
+  print(width = Inf) %>%
+  filter(.metric == "rmse") %>%
+  ggplot(mapping = aes(x = penalty, y = mean)) +
+  geom_point() +
+  labs(x = "Penalty", y = "CV RMSE") +
+  scale_x_log10(labels = scales::label_number())
+```
+
+```{r}
+Ridgetibble <- Ridge_fit %>%
+  show_best("rmse")
+
+ridge_cv <- Ridgetibble[[1,4]]
+
+best_ridge <- Ridge_fit %>%
+  select_best("rmse")
+```
+
+### (b) 
+Propose a model (or set of models) that seem to perform well on this data set, and justify your answer. Make sure that you are evaluating model performance using validation set error, crossvalidation, or some other reasonable alternative, as opposed to using training error.
+
+```{r}
+fl_lasso <- lasso_wf %>%
+  finalize_workflow(best_lasso)
+
+fl_ridge <- ridge_wf %>%
+  finalize_workflow(best_ridge)
+
+fl_lasso_fit <- fl_lasso %>%
+  last_fit(Boston_split)
+
+fl_ridge_fit <- fl_ridge %>%
+  last_fit(Boston_split)
+
+fl_ls_fit <- ls_wf %>%
+  last_fit(Boston_split)
+
+fl_lasso_tibble <- fl_lasso_fit %>%
+  collect_metrics()
+
+fl_ridge_tibble <- fl_ridge_fit %>%
+  collect_metrics()
+
+fl_ls_tibble <- fl_ls_fit %>%
+  collect_metrics()
+
+ls_test <- fl_ls_tibble[[1,3]]
+lasso_test <- fl_lasso_tibble[[1,3]]
+ridge_test <- fl_ridge_tibble[[1,3]]
+```
+
+You must follow the [typical machine learning paradigm](https://ucla-biostat-212a.github.io/2024winter/slides/06-modelselection/workflow_lasso.html) to compare _at least_ 3 methods: least squares, lasso, and ridge. Report final results as
+
+```{r}
+rmse_data <- data.frame(
+  Method = c("LS","Ridge","Lasso"),
+  `CV RMSE`= c(ls_cv, ridge_cv, lasso_cv),
+  `Test RMSE`= c(ls_test, ridge_test, lasso_test)
+)
+rmse_data
+```
+
+
+### (c) 
+Does your chosen model involve all of the features in the data set? Why or why not?
+
+
+**Answer:**
+The chosen model does not involve all of the features in the data set. The lasso and ridge regression models are designed to reduce overfitting by penalizing the coefficients of the predictors. This results in a model that uses only the most important predictors, which can improve the model's generalization to new data. The least squares model uses all of the features in the data set, which can lead to overfitting and poor generalization to new data.
+
+
+## Bonus question (20pts)
+
+Consider a linear regression, fit by least squares to a set of training data $(x_1, y_1), \ldots, (x_N,  y_N)$ drawn at random from a population. Let $\hat \beta$ be the least squares estimate. Suppose we have some test data $(\tilde{x}_1, \tilde{y}_1), \ldots, (\tilde{x}_M, \tilde{y}_M)$ drawn at random from the same population as the training data. If $R_{\text{train}}(\beta) = \frac{1}{N} \sum_{i=1}^N (y_i - \beta^T x_i)^2$ and $R_{\text{test}}(\beta) = \frac{1}{M} \sum_{i=1}^M (\tilde{y}_i - \beta^T \tilde{x}_i)^2$. Show that
+$$
+\operatorname{E}[R_{\text{train}}(\hat{\beta})] < \operatorname{E}[R_{\text{test}}(\hat{\beta})].
+$$
+
+
+
+**Answer:**
+
+$$
+\begin{align}
+\operatorname{E}[R_{\text{train}}(\hat{\beta})] 
+&= \operatorname{E}\left[\frac{1}{N} \sum_{i=1}^N (y_i - \hat{\beta}^T x_i)^2\right] \\
+&= \frac{1}{N} \sum_{i=1}^N \operatorname{E}[(y_i - \hat{\beta}^T x_i)^2] \\
+&= \frac{1}{N} \sum_{i=1}^N \left(\operatorname{E}[y_i^2] - 2\hat{\beta}^T \operatorname{E}[x_i y_i] + \hat{\beta}^T \operatorname{E}[x_i x_i^T] \hat{\beta}\right) \\
+&= \operatorname{E}[(y_i - \hat{\beta}^T x_i)^2]
+\end{align}
+$$
+the test data is drawn from the same population as the training data, we have $\operatorname{E}[R_{\text{train}}(\hat{\beta})] = \operatorname{E}[R_{\text{test}}(\hat{\beta})]$.
+$$
+\begin{align}
+\operatorname{E}[R_{\text{test}}(\tilde{\beta})] &= \operatorname{E}\left[\frac{1}{M} \sum_{i=1}^M (\tilde{y}_i - \tilde{\beta}^T \tilde{x}_i)^2\right] \\
+&= \frac{1}{M} \sum_{i=1}^M \operatorname{E}[(\tilde{y}_i - \tilde{\beta}^T \tilde{x}_i)^2] \\
+&= \frac{1}{M} \sum_{i=1}^M \left(\operatorname{E}[\tilde{y}_i^2] - 2\tilde{\beta}^T \operatorname{E}[\tilde{x}_i \tilde{y}_i] + \tilde{\beta}^T \operatorname{E}[\tilde{x}_i \tilde{x}_i^T] \tilde{\beta}\right) \\
+&= \operatorname{E}[(\tilde{y}_i - \tilde{\beta}^T \tilde{x}_i)^2]
+\end{align}
+$$
+Since the test data is drawn from the same population as the training data, we have $\operatorname{E}[R_{\text{train}}(\hat{\beta})] = \operatorname{E}[R_{\text{test}}(\hat{\beta})]$.
+Since the least squares estimate $\hat{\beta}$ is derived from the training data, it is expected to minimize the training error. Therefore, $\operatorname{E}[R_{\text{train}}(\hat{\beta})] < \operatorname{E}[R_{\text{test}}(\hat{\beta})]$.
