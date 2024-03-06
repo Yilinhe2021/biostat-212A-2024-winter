@@ -24,16 +24,533 @@ knitr:
 
 ## ISL Exercise 8.4.3 (10pts)
 
+3.  Consider the Gini index, classification error, and entropy in a simple classification setting with two classes. Create a single plot that dis- plays each of these quantities as a function of $\hat p_{m1}$. The x-axis should display $\hat p_{m1}$, ranging from 0 to 1, and the y-axis should display the value of the Gini index, classification error, and entropy.
+
+Hint: In a setting with two classes, $\hat p_{m1}$ = 1 − $\hat p_{m2}$. You could make this plot by hand, but it will be much easier to make in R
+
+```{r, warning=FALSE}
+library(ggplot2)
+
+pm1 <- seq(0,1,length.out = 100)
+gini <- 2 * pm1 * (1 - pm1)
+class_error <- 1 - pmax(pm1, 1 - pm1)
+entropy <- -pm1 * log2(pm1) - (1 - pm1) * log2(1 - pm1)
+
+df <- data.frame(pm1, gini, class_error, entropy)
+
+ggplot (df, aes(x=pm1)) + 
+  geom_line(aes(y=gini, color="Gini Index")) + 
+  geom_line(aes(y=class_error, color="Classification Error")) + 
+  geom_line(aes(y=entropy, color="Entropy")) + 
+  labs(x= "pm1", y="Values") + 
+  scale_color_manual(values=c("Gini Index"="red", 
+                              "Classification Error"="blue", 
+                              "Entropy"="green")) +
+  theme_minimal()
+
+```
+
 ## ISL Exercise 8.4.4 (10pts)
+
+![](img/FIGURE 8.14.png)
+4.  This question relates to the plots in Figure 8.14.
+
+(a) Sketch the tree corresponding to the partition of the predictor space illustrated in the left-hand panel of Figure 8.14. The numbers inside the boxes indicate the mean of Y within each region.
+
+![](img/Decision Tree.jpg)
+
+(b) Create a diagram similar to the left-hand panel of Figure 8.14, using the tree illustrated in the right-hand panel of the same figure. You should divide up the predictor space into the correct regions, and indicate the mean for each region.
+
+![](img/Partition Diagram.jpg)
 
 ## ISL Exercise 8.4.5 (10pts)
 
+5.  Suppose we produce ten bootstrapped samples from a data set containing red and green classes. We then apply a classification tree to each bootstrapped sample and, for a specific value of X, produce 10 estimates of P(Class is Red X): 0.1,0.15,0.2,0.2,0.55,0.6,0.6,0.65,0.7, and 0.75.
+
+There are two common ways to combine these results together into a single class prediction. One is the majority vote approach discussed in this chapter. The second approach is to classify based on the average probability. In this example, what is the final classification under each of these two approaches?
+
+**Answer:**
+
+```{r}
+prob <- c(0.1,0.15,0.2,0.2,0.55,0.6,0.6,0.65,0.7,0.75)
+
+Major <- max(ifelse(prob > 0.5, "Red", "Green"))
+cat("Majority vote classification is:", Major, "\n")
+
+Ave_prob_class <- ifelse(mean(prob) > 0.5, "Red", "Green")
+cat("Average probability classification is:", Ave_prob_class, "\n")
+
+Ave_prob <- mean(prob)
+cat("Average probability is:", Ave_prob, "\n")
+```
+
+
 ## ISL Lab 8.3. `Boston` data set (30pts)
 
-Follow the machine learning workflow to train regression tree, random forest, and boosting methods for predicting `medv`. Evaluate out-of-sample performance on a test set.
+Follow the machine learning workflow to train random forest and boosting methods for predicting `medv`. Evaluate out-of-sample performance on a test set.
+
+```{r setup, include=FALSE}
+# 2 Hitter data
+library(GGally)
+library(gtsummary)
+library(ranger)
+library(tidyverse)
+library(tidymodels)
+library(ISLR2)
+```
+
+```{r}
+# 1 Overview
+Boston %>% tbl_summary()
+```
+
+### Random forests for Prediction
+
+```{r}
+# 3 Initial split into test and non-test sets
+set.seed(101)
+boston_split <- initial_split(Boston, prop = 0.5)
+
+boston_other <- training(boston_split)
+boston_test <- testing(boston_split)
+
+# 4 recipe (R)
+boston_recipe <- recipe(medv ~ ., data = boston_other) %>% 
+  step_naomit(medv) %>% 
+  step_zv(all_numeric_predictors())
+
+# 5 Model
+boston_mod <- 
+  rand_forest(
+    mode = "regression", 
+    mtry = tune(), 
+    trees = tune()
+  ) %>% 
+  set_engine("ranger")
+
+# 6 workflow (R)
+boston_wf <- workflow() %>% 
+  add_recipe(boston_recipe) %>%
+  add_model(boston_mod)
+
+# 7 Tuning grid
+boston_grid <- grid_regular(
+    trees(range = c(100L, 500L)),
+    mtry(range = c(1L, 5L)), 
+    levels = c(3,5)
+  )
+
+# 8 Cross-validation (CV)
+## Set cross-validation partitions
+set.seed(101)
+folds <- vfold_cv(boston_other, v = 5)
+
+## Fit cross-validation
+boston_fit <- boston_wf %>% 
+  tune_grid(resamples = folds,
+            grid = boston_grid,
+            metrics = metric_set(rmse, rsq))
+
+## visualize CV results
+boston_fit %>% 
+  collect_metrics() %>% 
+  print(width = Inf) %>% 
+  filter(.metric == "rmse") %>% 
+  mutate(mtry = as.factor(mtry)) %>%
+  ggplot(aes(x = trees, y = mean, color = mtry)) +
+  geom_line() + 
+  labs(x = "Number of Trees", y = "RMSE") 
+```
+The line for 'mtry' equal to 1 shows the highest RMSE, indicating less predictive accuracy, while 'mtry' values of 4 and 5 give the lowest RMSE, indicating a more accurate model.  However, there is little change in RMSE after a certain number of trees, suggesting that adding more trees beyond this point doesn't significantly improve the model.
+
+
+```{r}
+## Show the top 5 models
+boston_fit %>% 
+  show_best("rmse")
+```
+
+```{r}
+# let's select the best model
+best_rf <- boston_fit %>% 
+  select_best("rmse")
+best_rf
+```
+
+```{r}
+# 9 Finalize the model
+## Final workflow
+final_wf <- 
+  boston_wf %>% 
+  finalize_workflow(best_rf)
+
+## Fit the whole training set, then predict 
+final_fit <- 
+  final_wf %>%
+  last_fit(boston_split)
+
+## Test Metrics
+final_fit %>% 
+  collect_metrics()
+```
+
+The model demonstrates strong explanatory power with an $R^2$ value of 0.86, meaning that it accounts for approximately 86% of the variation in the `medv` variable. This combination of a high $R^2$ value and a relatively low RMSE indicates that the model is both predictive and accurate, capturing a significant portion of the variability in the response variable while maintaining an average prediction error of approximately $3,630.
+
+### Boosting For Prediction
+
+```{r}
+
+# 3 Initial split into test and non-test sets
+set.seed(101) 
+
+boston_split <- initial_split(Boston, 
+                              prop = 0.5)
+
+boston_other <- training(boston_split)
+boston_test <- testing(boston_split)
+
+# 4 recipe (R)
+gb_recipe <- 
+  recipe( 
+    medv ~ ., 
+    data = boston_other
+  ) %>%
+  step_naomit(medv) %>%
+  step_zv(all_numeric_predictors())
+
+# 5 Model
+gb_mod <- 
+  boost_tree(
+    mode = "regression",
+    trees = 1000,
+    tree_depth = tune(), 
+    learn_rate = tune()
+  ) %>% 
+  set_engine("xgboost")
+
+# 6 workflow (R)
+gb_workflow <- workflow() %>% 
+  add_recipe(gb_recipe) %>% 
+  add_model(gb_mod)
+
+# 7 Tuning grid
+gb_grid <- grid_regular(
+    tree_depth(range = c(1L, 4L)),
+    learn_rate(range = c(-3, -0.5), 
+               trans = log10_trans()),
+    levels = c(4, 10)
+  )
+
+# 8 Cross-validation (CV)
+## Set cross-validation partitions
+set.seed(101)
+folds <- vfold_cv(boston_other, v = 5)
+
+## Fit cross-validation
+gb_fit <- gb_workflow %>% 
+  tune_grid(
+    resamples = folds,
+    grid = gb_grid,
+    metrics = metric_set(rmse, rsq)
+  )
+
+## Visualize CV results
+gb_fit %>% 
+  collect_metrics() %>% 
+  print(width = Inf) %>% 
+  filter(.metric == "rmse") %>% 
+  ggplot(mapping = aes(x = learn_rate, y = mean, 
+                       color = factor(tree_depth))) +
+  geom_point() + 
+  geom_line() + 
+  labs(x = "Learning Rate", y = "CV AUC")
+
+```
+
+As the learning rate increases, the CV AUC decreases slightly and then stabilizes. This suggests that a learning rate that is too high does not benefit the model significantly. The different colored lines represent various tree depths, but they all follow a similar pattern. This means that tree depth does not significantly affect the relationship between learning rate and model performance in this range.
+
+
+
+```{r}
+## Show the top 5 models
+gb_fit %>% 
+  show_best("rmse")
+```
+
+```{r}
+## Select the best model
+best_gb <- gb_fit %>% 
+  select_best("rmse")
+best_gb
+```
+
+```{r}
+# 9 Finalize the model
+## Final workflow
+final_wf <- 
+  gb_workflow %>% 
+  finalize_workflow(
+    best_gb
+  )
+ 
+## Fit the whole training set, then predict
+final_fit <- 
+  final_wf %>%
+  last_fit(
+    boston_split
+  )
+
+## Test Metrics
+final_fit %>% 
+  collect_metrics()
+```
+
+The model has an $R^2$ value of 0.85, which indicates a strong fit to the data, explaining about 85% of the variation in the medv variable.  However, the RMSE of 3.72 suggests that the model's predictions are, on average, 3.72 units away from the actual values.  Although the high $R^2$ suggests that the model explains a large proportion of the variability, there is still a risk of overfitting to the training data.
+
+
+```{r}
+# 10 Visualize the model
+library(vip)
+
+final_tree <- extract_workflow(final_fit)
+final_tree %>% 
+  extract_fit_parsnip() %>%
+  vip()
+```
+
+
+
+This bar graph shows the significance of different predictors in a model. The variable `lstat`, which measures the percentage of lower socio-economic status, is the most significant predictor, with the largest bar and the most substantial effect on the model's predictions. The second most important predictor is the `rm` variable, which indicates the average number of rooms per dwelling. The model is influenced by variables such as `dis`, `crim`, `nox`, and `age`, albeit to a lesser extent. Variables like `tax`, `ptratio`, `rad`, and `indus` have a relatively lower impact on the model's output.
+
 
 ## ISL Lab 8.3 `Carseats` data set (30pts)
 
-Follow the machine learning workflow to train classification tree, random forest, and boosting methods for classifying `Sales <= 8` versus `Sales > 8`. Evaluate out-of-sample performance on a test set.
+Follow the machine learning workflow to train random forest and boosting methods for classifying `Sales <= 8` versus `Sales > 8`. Evaluate out-of-sample performance on a test set.
 
+### Random Forest for Classification
 
+```{r}
+# 2 Heart data
+carseats <- Carseats %>% 
+  mutate(Sales = ifelse(Sales > 8, "high", "low"))
+
+# 3 Initial split into test and non-test sets
+set.seed(101)
+carseats_split <- initial_split(carseats, 
+                              prop = 0.8, 
+                              strata = "Sales")
+
+carseats_other <- training(carseats_split)
+carseats_test <- testing(carseats_split)
+
+# 4 recipe (R)
+carseats_recipe <- recipe(Sales ~ ., data = carseats_other) %>% 
+  step_zv(all_numeric_predictors()) 
+
+# 5 Model
+carseats_mod <- 
+  rand_forest(
+    mode = "classification", 
+    mtry = tune(), 
+    trees = tune()
+  ) %>% 
+  set_engine("ranger")
+
+# 6 workflow (R)
+carseats_workflow <- workflow() %>% 
+  add_recipe(carseats_recipe) %>%
+  add_model(carseats_mod)
+
+# 7 Tuning grid
+carseats_grid <- grid_regular(
+    trees(range = c(100L, 300L)),    
+    mtry(range = c(1L, 5L)), 
+    levels = c(3,5))
+
+# 8 Cross-validation (CV)
+## Set cross-validation partitions
+set.seed(101)
+folds <- vfold_cv(carseats_other, v = 5)
+
+## Fit cross-validation
+carseats_fit <- 
+  carseats_workflow %>% 
+  tune_grid(
+    resamples = folds,
+    grid = carseats_grid,
+    metrics = metric_set(roc_auc, accuracy)
+  )
+
+## Visualize CV results
+carseats_fit %>% 
+  collect_metrics() %>% 
+  print(width = Inf) %>%
+  filter(.metric == "roc_auc") %>% 
+  mutate(mtry = as.factor(mtry)) %>%
+  ggplot(aes(x = trees, y = mean, color = mtry)) + 
+  geom_line() +
+  labs(title = "ROC AUC by mtry",
+       x = "Num. of Trees",
+       y = "CV AUC")
+
+```
+The graph displays the cross-validated Area Under the Curve (CV AUC) for a model with different numbers of trees. It is evident that an `mtry` of 1 consistently performs worse than the other values, indicating that a very small `mtry` value is not optimal in this scenario. In contrast, the lines for `mtry` values 2 to 5 rise with the number of trees. `mtry` values of 3 and 5 show similar trends and higher CV AUC values.
+
+```{r}
+## Show the top 5 models
+carseats_fit %>% 
+  show_best("roc_auc")
+
+```
+
+```{r}
+## Let’s select the best model.
+best_carseats <- 
+  carseats_fit %>% 
+  select_best("roc_auc")
+best_carseats
+```
+
+```{r}
+# 9 Finalize our model
+## Final workflow
+final_carseats <- 
+  carseats_workflow %>% 
+  finalize_workflow(
+    best_carseats
+  )
+
+## fit the whole training set, then predict test 
+final_fit <- 
+  final_carseats %>% 
+  last_fit(carseats_split)
+
+## test metrics
+final_fit %>% 
+  collect_metrics()
+```
+
+The model has an 81% accuracy rate and a strong capability to distinguish between the two categories, indicating its effectiveness in ranking the likelihood of sales being in one group over the other.  The ROC AUC score of 0.91 reaffirms this model's high discriminative power.
+
+### Boosting Tree for Classification
+
+```{r}
+# 2 Heart data
+carseats <- Carseats %>% 
+  mutate(Sales = ifelse(Sales > 8, "high", "low"))
+
+# 3 Initial split into test and non-test sets
+set.seed(101)
+carseats_split <- initial_split(carseats, 
+                              prop = 0.8, 
+                              strata = "Sales")
+
+carseats_other <- training(carseats_split)
+carseats_test <- testing(carseats_split)
+
+# 4 recipe (R)
+carseats_recipe <- 
+  recipe(
+    Sales ~ ., 
+    data = carseats_other
+  ) %>% 
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_numeric_predictors())
+
+# 5 Model
+carseats_mod <- 
+  boost_tree(
+    mode = "classification", 
+    trees = 1000, 
+    tree_depth = tune(), 
+    learn_rate = tune()
+  ) %>% 
+  set_engine("xgboost")
+
+# 6 workflow (R)
+carseats_workflow <- workflow() %>% 
+  add_recipe(carseats_recipe) %>%
+  add_model(carseats_mod)
+
+# 7 Tuning grid
+carseats_grid <- 
+  grid_regular(
+    tree_depth(range = c(1L, 3L)), 
+    learn_rate(range = c(-3, 2), trans = log10_trans()),
+    levels = c(6,10)
+  )
+
+# 8 Cross-validation (CV)
+## Set cross-validation partitions
+set.seed(42)
+folds <- vfold_cv(carseats_other, v = 5)
+
+## Fit cross-validation
+carseats_fit <- 
+  carseats_workflow %>% 
+  tune_grid(
+    resamples = folds,
+    grid = carseats_grid,
+    metrics = metric_set(roc_auc, accuracy)
+  )
+
+## Visualize CV results
+carseats_fit %>% 
+  collect_metrics() %>% 
+  print(width = Inf) %>%
+  filter(.metric == "roc_auc") %>% 
+  mutate(tree_depth = as.factor(tree_depth)) %>%
+  ggplot(aes(x = learn_rate, y = mean, color = tree_depth)) + 
+  geom_point() +
+  geom_line() +
+  labs(title = "ROC AUC by tree_depth",
+       x = "Learning Rate",
+       y = "CV AUC")
+```
+
+The graph displays how the model's prediction accuracy changes with different learning rates and tree depths, as measured by the CV AUC. Increasing the learning rate initially improves accuracy for all tree depths, but after reaching a certain point, accuracy drops sharply, possibly due to overfitting. The model with a tree depth of 1 (red line) achieves the highest accuracy at a learning rate close to 0.1. The green and blue models, with tree depths of 2 and 3 respectively, follow a similar pattern but have a lower peak. This suggests that they may not handle higher learning rates as well as the model with a tree depth of 1.
+
+```{r}
+## Show the top 5 models
+carseats_fit %>% 
+  show_best("roc_auc")
+```
+```{r}
+## Let’s select the best model.
+best_carseats <- 
+  carseats_fit %>% 
+  select_best("roc_auc")
+best_carseats
+```
+
+```{r}
+# 9 Finalize our model
+## Final workflow
+final_carseats <- 
+  carseats_workflow %>% 
+  finalize_workflow(
+    best_carseats
+  )
+
+## Fit the whole training set and then predict 
+final_fit <- 
+  final_carseats %>% 
+  last_fit(carseats_split)
+
+## test metrics
+final_fit %>% 
+  collect_metrics()
+
+```
+This model does a really good job at predicting outcomes correctly 86% of the time. Also, it's great at telling the difference between the two groups it's sorting, doing that correctly 96% of the time. So, it's both accurate and good at making sure it doesn't mix up the groups.
+
+```{r}
+# visualize the model tree
+final_tree <- extract_workflow(final_fit)
+
+final_tree %>% 
+  extract_fit_parsnip() %>%
+  vip()
+```
+
+The bar chart shows the factors that are most important in predicting sales. The results are consistent with those from a classification tree analysis.  The three most important factors are 'Price', 'ShelveLoc_Good', and 'CompPrice'.  'Price' is the most significant factor, indicating that it is the strongest predictor of high sales.  This is understandable since the cost of an item often directly affects a customer's decision to buy.  'ShelveLoc_Good' is the second most influential factor, reflecting whether items are placed in a favorable position within the store and emphasizing the importance of product placement in influencing sales.  The 'CompPrice' is a crucial factor that can affect a customer's perception of value when making purchasing decisions.
