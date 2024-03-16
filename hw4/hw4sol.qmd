@@ -482,7 +482,7 @@ carseats_grid <-
 
 # 8 Cross-validation (CV)
 ## Set cross-validation partitions
-set.seed(42)
+set.seed(101)
 folds <- vfold_cv(carseats_other, v = 5)
 
 ## Fit cross-validation
