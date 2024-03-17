@@ -1,7 +1,7 @@
 ---
 title: "Biostat 212a Homework 6"
 subtitle: "Due Mar 22, 2024 @ 11:59PM"
-author: "Yilin He and UID: 905789961"
+author: "YOUR NAME and UID"
 date: today
 format:
   html:
@@ -153,10 +153,7 @@ Summarize the performance of different machine learning forecasters in the follo
 | Boosting | | | |
 
 ## ISL Exercise 12.6.13 (90 pts)
-
 ### 12.6.13 (b) (30 pts)
-
 ### PCA and UMAP (30 pts)
-
 ### 12.6.13 (c) (30 pts)
 
