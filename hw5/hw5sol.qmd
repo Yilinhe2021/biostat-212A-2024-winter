@@ -29,29 +29,61 @@ knitr:
 ### (a) 
 Sketch the hyperplane $1 + 3X_1 − X_2 = 0$. Indicate the set of points for which $1 + 3X_1 − X_2 > 0$, as well as the set of points for which $1 + 3X_1 − X_2 < 0$.
 
+**Answer:**
+
+```{r, fig.width=10, fig.height=5}
+library(ggplot2)
+
+x <- seq(-10,10)
+y <- 1 + 3 * x
+data <- data.frame(x,y)
+
+ggplot() + 
+  geom_line(aes(x,y)) +
+  geom_ribbon(aes(x, ymin = -Inf, ymax = y), fill = "lightblue", alpha = 0.5) +
+  geom_ribbon(aes(x, ymin = y, ymax = Inf), fill = "pink", alpha = 0.5) +
+  labs(title = "Hyperplane", x = "X", y = "Y") +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_text(aes(x = -3, y = 2, label = "1 + 3X_1 − X_2 < 0"), vjust = -1) +
+  geom_text(aes(x = 5, y = -10, label = "1 + 3X_1 − X_2 > 0"), vjust = -1) 
+
+```
+
 
 ### (b) 
 On the same plot, sketch the hyper-plane $−2 + X_1 + 2X_2 = 0$. Indicate the set of points for which $−2 + X_1 + 2X_2 > 0$, as well as the set of points for which $−2 + X_1 + 2X_2 < 0$.
 
+**Answer:**
+
 ```{r, fig.width=10, fig.height=5}
+x <- seq(-5,5,lenght.out = 100)
+y1 <- 1 + 3 * x
+y2 <- (2 - x) / 2
+data1 <- data.frame(x, y = y1)
+data2 <- data.frame(x, y = y2)
 
-plot(0, type="n", xlab='X1', ylab='X2', 
-     ylim = c(-10,10),xlim = c(-5,5)) 
-abline(1,3,col="red") #Line (a): 1+3X1-X2=0 
-abline(1,-0.5,col="black") #Line (b): -2+X1+2X2=0
-
-# Points where Line(a)>0 and Line(a)<0
-points(-2,-4,col="blue",pch=19) 
-points(-2,-6,col="green",pch=19)
-# Points where Line(b)>0 and Line(b)<0
-
-points(2,1,col="green",pch=19) 
-points(2,-1,col="blue",pch=19)
-
-legend(3,6,legend=c("Point > 0", "Point < 0", "line a", "line b"),
-       col=c("green", "blue", "red", "black"),
-       pch=c(19,19,NA,NA),lty=c(NA,NA,1,1))
+ggplot() + 
+  geom_line(data = data1, aes(x,y), color = "blue") +
+  geom_ribbon(data = data1, aes(x, ymin = -Inf, ymax = y), fill = "lightblue", alpha = 0.5) +
+  geom_ribbon(data = data1, aes(x, ymin = y, ymax = Inf), fill = "pink", alpha = 0.5) +
+  
+  geom_line(data = data2, aes(x,y), color = "red") +
+  geom_ribbon(data = data2, aes(x, ymin = -Inf, ymax = y), fill = "lightgreen", alpha = 0.5) +
+  geom_ribbon(data = data2, aes(x, ymin = y, ymax = Inf), fill = "yellow", alpha = 0.5) +
+  
+  
+  labs(title = "Hyperplane and Regions", x = "X", y = "Y") +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_text(aes(x = -2, y = -3, label = "1 + 3X_1 − X_2 < 0"), vjust = -1) +
+  geom_text(aes(x = -2, y = -10, label = "1 + 3X_1 − X_2 > 0"), vjust = -1) +
+  geom_text(aes(x = 2, y = 2, label = "−2 + X_1 + 2X_2 > 0"), vjust = -1) +
+  geom_text(aes(x = 2, y = -4, label = "−2 + X_1 + 2X_2 < 0"), vjust = -1) 
 ```
+
 
 ## ISL Exercise 9.7.2 (10pts)
 
@@ -60,29 +92,55 @@ legend(3,6,legend=c("Point > 0", "Point < 0", "line a", "line b"),
 ### (a) 
 Sketch the curve $(1 + X_1)^2 + (2 − X_2)^2 = 4$.
 
+**Answer:**
+
+```{r, fig.width=10, fig.height=10}
+x1 <- seq(-3, 1, length.out = 400)
+
+x2_1 <- 2 + sqrt(4 - (1 + x1)^2)
+x2_2 <- 2 - sqrt(4 - (1 + x1)^2)
+
+x1_combined <- c(x1, rev(x1))
+x2_combined <- c(x2_1, rev(x2_2))
+
+circle <- data.frame(x1 = x1_combined, x2 = x2_combined)
+
+ggplot() + 
+  geom_path(data = circle, aes(x = x1 , y = x2), color = "purple") +
+  labs(title = "Circle", x = "X1", y = "X2") +
+  geom_point(aes(x = -1, y = 2), color = "purple", size = 3) +
+  geom_text(aes(x = -1, y = 2.5, label = "Center (-1,2)"), vjust = -1) +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") 
+
+```
 
 ### (b) 
 On your sketch, indicate the set of points for which $(1 + X_1)^2  + (2 − X_2)^2 > 4$, as well as the set of points for which $(1 + X_1)^2 + (2 − X_2)^2 ≤ 4$.
 
-```{r, fig.width=8, fig.height=5}
-library(plotrix)
-# Drawing a circle on a plot with a radius of 2 and center at (-1,2).
-plot(x=seq(-3,1), y=seq(0,4),type="n", asp = 1, xlab='X1',
-     ylab='X2') 
-draw.circle(-1,2,2, border = 'purple')
-points(-1,2, col='purple', pch=19)
-text(-1,2.2,'Center')
+**Answer:**
 
-# Points outside decision boundary.
-points(c(-4,2,-3),c(1,1,3), col="blue",pch=19)
+```{r, fig.width=10, fig.height=10}
+x1 <- seq(-3, 1, length.out = 400)
 
-# Points inside decision boundary.
-points(c(-1,-2,0),c(1,2,3), col="red",pch=19)
+x2_1 <- 2 + sqrt(4 - (1 + x1)^2)
+x2_2 <- 2 - sqrt(4 - (1 + x1)^2)
+x1_combined <- c(x1, rev(x1))
+x2_combined <- c(x2_1, rev(x2_2))
+circle <- data.frame(x1 = x1_combined, x2 = x2_combined)
 
-legend(-4,4,legend=c("Point > 0", "Point < 0", "Decision Boundary"),
-       col=c("blue", "red", "purple"),
-       pch=c(19,19,NA),lty=c(NA,NA,1))
 
+ggplot() + 
+  geom_path(data = circle, aes(x = x1 , y = x2), color = "purple") +
+  labs(title = "Circle", x = "X1", y = "X2") +
+  geom_point(aes(x = -1, y = 2), color = "purple", size = 3) +
+  geom_text(aes(x = -1, y = 2, label = "Center (-1,2)"), vjust = -1) +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_text(aes(x = 0.5, y = 4, label = "(1 + X_1)^2  + (2 − X_2)^2 > 4"), vjust = -1) +
+  geom_text(aes(x = -2, y = 3, label = "(1 + X_1)^2  + (2 − X_2)^2 ≤ 4"), vjust = -1)
 ```
 
 
@@ -90,15 +148,59 @@ legend(-4,4,legend=c("Point > 0", "Point < 0", "Decision Boundary"),
 ### (c) 
 Suppose that a classifier assigns an observation to the blue class if $(1 + X_1)^2 + (2 − X_2)^2 > 4$, and to the red class otherwise. To what class is the observation (0, 0) classified? (−1, 1)? (2, 2)? (3, 8)?
 
+**Answer:**
+
+```{r, fig.width=10, fig.height=10}
+obs <- data.frame(x_coord = c(0, -1, 2, 3),
+                  y_coord = c(0,  1, 2, 8))
+
+obs$inside <- ((1 + obs$x_coord)^2 + 
+               (2 - obs$y_coord)^2) <= 4
 
 
-**Answer**: (0,0): Blue,(-1,1): Red,(2,2): Blue,(3,8): Blue
+x1 <- seq(-3, 5, length.out = 400)
+x2 <- seq(-1, 10, length.out = 400)
+grid <- expand.grid(x1 = x1, x2 = x2)
 
+grid$inside <- ((1 + grid$x1)^2 + (2 - grid$x2)^2) <= 4
+
+ggplot() +
+  geom_tile(data = grid, 
+            aes(x = x1, 
+                y = x2, 
+                fill = inside),
+            alpha = .5) +
+  geom_path(data = circle,
+            aes(x = x1, y = x2)) + 
+  geom_point(aes(x = -1, y = 2), color = "purple") +
+  geom_text(aes(x = -1, y = 2, label = "Center (-1,2)"), vjust = -1) +
+  geom_point(data = obs,
+             aes(x = x_coord, 
+                 y = y_coord,
+                 color = inside),
+             size = 2) +
+  labs(title = "Decision boundary for non-linearity",
+       x = "X1", 
+       y = "X2") +
+  scale_fill_manual(values = c("lightblue", "pink"),
+                    labels = c(">4", "<4"), 
+                    name = "Region") +
+  scale_color_manual(values = c("blue", "red"), 
+                     labels = c("Outside", "Inside"), 
+                     name = "Observation") +
+  theme_minimal() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_text(aes(x = 0.5, y = 4, label = "(1 + X_1)^2  + (2 − X_2)^2 > 4"), vjust = -1) +
+  geom_text(aes(x = -2, y = 3, label = "(1 + X_1)^2  + (2 − X_2)^2 ≤ 4"), vjust = -1) +
+  coord_fixed() 
+
+```
 
 ### (d) 
 Argue that while the decision boundary in (c) is not linear in terms of $X_1$ and $X_2$, it is linear in terms of $X_1$, $X_1^2$, $X_2$, and $X_2^2$.
 
-**Answer**: 
+**Answer:**
 
 $$
 \begin{align*}
@@ -115,27 +217,23 @@ The decision boundary is linear in terms of $X_1$, $X_1^2$, $X_2$, and $X_2^2$.
 
 Follow the machine learning workflow to train support vector classifier (same as SVM with linear kernel), SVM with polynomial kernel (tune the degree and regularization parameter $C$), and SVM with radial kernel (tune the scale parameter $\gamma$ and regularization parameter $C$) for classifying `Sales<=8` versus `Sales>8`. Use the same seed as in your HW4 for the initial test/train split and compare the final test AUC and accuracy to those methods you tried in HW4.
 
-
-### SVM with linear kernel
-
-### SVM with polynomial kernel
-
-```{r}
+```{r setup, include=FALSE}
 # 2 Heart data
 library(GGally)
 library(gtsummary)
 library(kernlab)
 library(tidyverse)
 library(tidymodels)
-library(ranger)
 library(ISLR2)
+library(caret)
+library(doParallel)
+library(vip)
+```
 
+```{r}
 carseats <- Carseats %>% 
-  print(width = Inf)
-
-carseats %>% tbl_summary(by=Urban)
-carseats %>% tbl_summary(by=US)
-carseats %>% tbl_summary(by=ShelveLoc) 
+  mutate(Sales = ifelse(Sales > 8, "Low", "High")) %>%
+  drop_na() 
 ```
 
 ```{r}
@@ -161,107 +259,305 @@ svm_recipe <-
          ) %>% 
   step_dummy(all_nominal_predictors()) %>%
   step_zv(all_numeric_predictors()) %>%
-  step_normalize(all_numeric_predictors()) %>%
-  step_normalize(all_predictors()) %>%
-  prep(training = data_other, retain = TRUE)
+  step_normalize(all_numeric_predictors())
 svm_recipe
 ```
 
+### SVM with linear kernel
 ```{r}
 # 5 Model
-svm_mod <- 
+svm_linear_mod <- 
+  svm_linear(
+    mode = "classification",
+    cost = tune()
+) %>%
+  set_engine("kernlab")
+```
+
+```{r}
+# 6 workflow (R)
+svm_linear_wf <- workflow() %>% 
+  add_recipe(svm_recipe) %>%
+  add_model(svm_linear_mod)
+```
+
+```{r}
+# 7 Tuning grid
+param_grid1 <- grid_regular(
+  cost(range = c(-3, 2)),
+  levels = c(5)
+  )
+```
+
+```{r}
+# 8 Cross-validation (CV)
+## Set cross-validation partitions
+set.seed(101)
+folds <- vfold_cv(data_other, v = 5)
+
+## Fit cross-validation
+svm_linear_fit <- 
+  svm_linear_wf %>% 
+  tune_grid(
+    resamples = folds,
+    grid = param_grid1,
+    metrics = metric_set(roc_auc, accuracy)
+  )
+```
+
+```{r}
+## Visualize CV results
+svm_linear_fit %>% 
+  collect_metrics() %>% 
+  filter(.metric == "roc_auc") %>% 
+  ggplot(aes(x = cost, y = mean)) + 
+  geom_line() +
+  geom_point() +
+  labs(x = "Cost",
+       y = "CV AUC") +
+  scale_x_log10()
+```
+The best model is selected based on the highest AUC. 
+
+```{r}
+## Let’s select the best model.
+best_linear <- svm_linear_fit %>% 
+  select_best("roc_auc")
+
+# 9 Finalize our model
+## Final workflow
+final_linear_wf <- 
+  svm_linear_wf %>% 
+  finalize_workflow(
+    best_linear
+  )
+
+## fit the whole training set, then predict test 
+final_linear_fit <- 
+  final_linear_wf %>% 
+  last_fit(data_split)
+
+## test metrics
+final_linear_fit %>% 
+  collect_metrics()
+```
+
+
+### SVM with polynomial kernel
+
+```{r}
+# 5 Model
+svm_polynomial_mod <- 
   svm_poly(
     mode = "classification", 
     cost = tune(), 
     degree = tune()
   ) %>% 
   set_engine("kernlab")
-svm_mod
 ```
 
 ```{r}
 # 6 workflow (R)
-svm_wf <- workflow() %>% 
+svm_polynomial_wf <- workflow() %>%
   add_recipe(svm_recipe) %>%
-  add_model(svm_mod)
-svm_wf
+  add_model(svm_polynomial_mod)
 ```
 
 ```{r}
 # 7 Tuning grid
-carseats_grid <- grid_regular(
-    trees(range = c(100L, 300L)),    
-    mtry(range = c(1L, 5L)), 
-    levels = c(3,5))
+param_grid2 <- grid_regular(
+  cost(range = c(-3, 2)),
+  degree(range = c(1, 5)),
+  levels = c(5)
+  )
+```
 
+```{r}
 # 8 Cross-validation (CV)
 ## Set cross-validation partitions
 set.seed(101)
-folds <- vfold_cv(carseats_other, v = 5)
+folds <- vfold_cv(data_other, v = 5)
 
 ## Fit cross-validation
-carseats_fit <- 
-  carseats_workflow %>% 
+svm_polynomial_fit <-
+  svm_polynomial_wf %>%
   tune_grid(
     resamples = folds,
-    grid = carseats_grid,
+    grid = param_grid2,
     metrics = metric_set(roc_auc, accuracy)
   )
-
-## Visualize CV results
-carseats_fit %>% 
-  collect_metrics() %>% 
-  print(width = Inf) %>%
-  filter(.metric == "roc_auc") %>% 
-  mutate(mtry = as.factor(mtry)) %>%
-  ggplot(aes(x = trees, y = mean, color = mtry)) + 
-  geom_line() +
-  labs(title = "ROC AUC by mtry",
-       x = "Num. of Trees",
-       y = "CV AUC")
-
 ```
-The graph displays the cross-validated Area Under the Curve (CV AUC) for a model with different numbers of trees. It is evident that an `mtry` of 1 consistently performs worse than the other values, indicating that a very small `mtry` value is not optimal in this scenario. In contrast, the lines for `mtry` values 2 to 5 rise with the number of trees. `mtry` values of 3 and 5 show similar trends and higher CV AUC values.
 
 ```{r}
-## Show the top 5 models
-carseats_fit %>% 
-  show_best("roc_auc")
-
+svm_polynomial_fit %>% 
+  collect_metrics() %>% 
+  filter(.metric == "roc_auc") %>% 
+  ggplot(aes(x = degree, y = mean)) + 
+  geom_line() +
+  geom_point() +
+  labs(x = "Degree",
+       y = "CV AUC") +
+  scale_x_log10()
 ```
 
 ```{r}
 ## Let’s select the best model.
-best_carseats <- 
-  carseats_fit %>% 
+best_polynomial <- svm_polynomial_fit %>% 
   select_best("roc_auc")
-best_carseats
-```
 
-```{r}
 # 9 Finalize our model
 ## Final workflow
-final_carseats <- 
-  carseats_workflow %>% 
+final_polynomial_wf <-
+  svm_polynomial_wf %>%
   finalize_workflow(
-    best_carseats
+    best_polynomial
   )
 
 ## fit the whole training set, then predict test 
-final_fit <- 
-  final_carseats %>% 
-  last_fit(carseats_split)
+final_polynomial_fit <-
+  final_polynomial_wf %>%
+  last_fit(data_split)
 
 ## test metrics
-final_fit %>% 
+final_polynomial_fit %>%
   collect_metrics()
+```
+
+
+```{r}
+
+set.seed(101)
+split_obj <- initial_split(data = carseats, 
+                           prop = 0.7, 
+                           strata = Sales)
+train <- training(split_obj)
+test <- testing(split_obj)
+
+
+# Create the recipe
+recipe(Sales ~ ., data = train) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_zv(all_numeric_predictors()) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  prep() -> recipe_obj
+
+# Bake
+train <- bake(recipe_obj, new_data=train)
+test <- bake(recipe_obj, new_data=test)
+
+final_polynomial_fit %>% 
+  pluck(".workflow", 1) %>% 
+  extract_fit_parsnip() %>%
+  vip(method = "permute", 
+      target = "Sales", 
+      metric = "accuracy", 
+      pred_wrapper = kernlab::predict, train = train)
+
+```
+Price is the most important variable, and it has a significant impact on the model compared to other variables. ShelveLoc_Good is the second most important variable, with CompPrice being very close as well. All of these variables are related to the pricing of the items, which correlates with sales.
+
+```{r}
+#Create a classification plot 
+svm_rbf_spec <- svm_rbf() %>% 
+  set_engine("kernlab") %>% 
+  set_mode("classification")
+
+svm_rbf_fit <- svm_rbf_spec %>% 
+  fit(Sales ~., data = train[,c("Price", "Age", "Sales")])
+
+svm_rbf_fit %>% 
+  extract_fit_engine() %>% 
+  plot()
 ```
 
 ### SVM with radial kernel
 
+```{r}
+# 5 Model
+svm_radial_mod <-
+  svm_rbf(
+    mode = "classification",
+    cost = tune(),
+    rbf_sigma = tune()
+  ) %>%
+  set_engine("kernlab")
+```
 
 
+```{r}
+# 6 workflow (R)
+svm_radial_wf <- workflow() %>%
+  add_recipe(svm_recipe) %>%
+  add_model(svm_radial_mod)
+```
 
+```{r}
+# 7 Tuning grid
+param_grid3 <- grid_regular(
+  cost(range = c(-8, 5)),
+  rbf_sigma(range = c(-5, -3)),
+  levels = c(14, 5)
+  )
+```
+
+```{r}
+# 8 Cross-validation (CV)
+## Set cross-validation partitions
+set.seed(101)
+folds <- vfold_cv(data_other, v = 5)
+
+## Fit cross-validation
+svm_radial_fit <-
+  svm_radial_wf %>%
+  tune_grid(
+    resamples = folds,
+    grid = param_grid3,
+    metrics = metric_set(roc_auc, accuracy)
+  )
+```
+
+```{r}
+svm_radial_fit %>% 
+  collect_metrics() %>% 
+  filter(.metric == "roc_auc") %>% 
+  ggplot(aes(x = cost, y = mean, alpha = rbf_sigma)) + 
+  geom_line(aes(group = rbf_sigma)) +
+  geom_point() +
+  labs(x = "Cost",
+       y = "CV AUC") +
+  scale_x_log10()
+```
+
+The different shades of lines represent various rbf_sigma values, a parameter that determines the model's behavior. The single training example's influence is determined by the value of the cost. The AUC shows the most significant increase with the darkest line, which has a value of .001, as the cost increases.
+
+
+```{r}
+## Let’s select the best model.
+best_radial <- svm_radial_fit %>%
+  select_best("roc_auc")
+
+# 9 Finalize our model
+## Final workflow
+final_radial_wf <-
+  svm_radial_wf %>%
+  finalize_workflow(
+    best_radial
+  )
+
+
+## fit the whole training set, then predict test 
+final_radial_fit <-
+  final_radial_wf %>%
+  last_fit(data_split)
+
+## test metrics
+final_radial_fit %>%
+  collect_metrics()
+```
+
+**Conclusion:**
+
+The best model for using kernels is the Support Vector Machine (SVM) with a linear kernel. It works just as well as the SVM with a polynomial kernel because the best setting for the polynomial kernel acts like a linear one. Both types of SVMs were the top performers, with an accuracy rate of 0.885, which was higher than all other models we compared them with from homework 4. The boosting tree and the SVM with a radial kernel also did well, with accuracies of 0.86. However, the random forest and decision tree models didn't do as well as the others.
 
 
 ## Bonus (10pts)
@@ -271,3 +567,30 @@ $$
 f(X) = \beta_0 + \beta_1 X_1 + \cdots + \beta_p X_p = \beta_0 + \beta^T X. 
 $$
 Then $f(X)=0$ defines a hyperplane in $\mathbb{R}^p$. Show that $f(x)$ is proportional to the signed distance of a point $x$ to the hyperplane $f(X) = 0$. 
+
+
+**Answer**:
+Given the defined by $f(X) = \beta_0 + \beta^T X = 0$ in $\mathbb{R}^p$, the function $f(x)$ evaluats to:
+$$
+f(x) = \beta_0 + \beta^T x
+$$
+where $X_0$ is a point on the hyperplane. The normal vector to the hyperplane is $\beta$. The equation of the hyperplane can be rewritten as
+$$
+\beta_0 = -\beta^T X_0 \\
+$$
+
+than plug in $f(x)$, we have
+$$
+f(x) = \beta_0 + \beta^T x \\
+= -\beta^T X_0 + \beta^T x \\
+= \beta^T (x - X_0) 
+$$
+Thus,
+$$
+\frac{\beta^T (x - X_0)}{\|\beta\|}
+= \frac{f(x)}{\|\beta\|} = d \\
+$$
+where $d$ is the signed distance of a point $x$ to the hyperplane $f(X) = 0$. Therefore, $f(x)$ is proportional to the signed distance of a point $x$ to the hyper-plane $\|\beta\|^{-1}$.
+
+Thus, $f(x)$ is proportional to the signed distance of a point $x$ to the hyperplane $f(X) = 0$.
+
