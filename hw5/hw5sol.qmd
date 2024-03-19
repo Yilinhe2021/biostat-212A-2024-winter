@@ -234,6 +234,7 @@ library(vip)
 carseats <- Carseats %>% 
   mutate(Sales = ifelse(Sales > 8, "Low", "High")) %>%
   drop_na() 
+carseats
 ```
 
 ```{r}
